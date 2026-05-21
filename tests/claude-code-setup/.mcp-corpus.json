@@ -1,0 +1,186 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "description": "Manages GitHub repositories, issues, pull requests, and code search.",
+      "tools": [
+        {
+          "name": "create_issue",
+          "description": "Create a new issue in a GitHub repository.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "owner": { "type": "string", "description": "Repository owner (user or org)" },
+              "repo":  { "type": "string", "description": "Repository name" },
+              "title": { "type": "string", "description": "Issue title" },
+              "body":  { "type": "string", "description": "Issue body / description" },
+              "labels": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Labels to apply to the issue"
+              }
+            },
+            "required": ["owner", "repo", "title"]
+          }
+        },
+        {
+          "name": "list_pull_requests",
+          "description": "List pull requests in a GitHub repository, optionally filtered by state.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "owner": { "type": "string" },
+              "repo":  { "type": "string" },
+              "state": {
+                "type": "string",
+                "enum": ["open", "closed", "all"],
+                "default": "open"
+              }
+            },
+            "required": ["owner", "repo"]
+          }
+        },
+        {
+          "name": "search_code",
+          "description": "Search for code across GitHub repositories using GitHub search syntax.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query":    { "type": "string", "description": "GitHub code search query" },
+              "language": { "type": "string", "description": "Filter results by programming language" }
+            },
+            "required": ["query"]
+          }
+        }
+      ]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"],
+      "description": "Query and explore a PostgreSQL database with read-only SQL access.",
+      "tools": [
+        {
+          "name": "query",
+          "description": "Execute a read-only SQL SELECT query and return the result rows.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "sql": { "type": "string", "description": "SQL SELECT statement to execute" }
+            },
+            "required": ["sql"]
+          }
+        },
+        {
+          "name": "list_tables",
+          "description": "List all tables in the connected PostgreSQL database.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "type": "string",
+                "description": "Schema name to inspect (default: public)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "description": "Send messages, read channel history, and browse channels in a Slack workspace.",
+      "tools": [
+        {
+          "name": "post_message",
+          "description": "Post a message to a Slack channel or direct message thread.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "channel_id": { "type": "string", "description": "Channel ID or user ID (for DMs)" },
+              "text":       { "type": "string", "description": "Message text (supports Slack mrkdwn)" }
+            },
+            "required": ["channel_id", "text"]
+          }
+        },
+        {
+          "name": "get_channel_history",
+          "description": "Retrieve recent messages from a Slack channel.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "channel_id": { "type": "string" },
+              "limit": {
+                "type": "integer",
+                "description": "Number of messages to retrieve",
+                "default": 10
+              }
+            },
+            "required": ["channel_id"]
+          }
+        },
+        {
+          "name": "list_channels",
+          "description": "List all public channels in the Slack workspace.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "description": "Read, write, and search files within a sandboxed directory.",
+      "tools": [
+        {
+          "name": "read_file",
+          "description": "Read the full contents of a file.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string", "description": "Absolute path to the file" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "write_file",
+          "description": "Write content to a file, creating it if it does not exist.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path":    { "type": "string" },
+              "content": { "type": "string" }
+            },
+            "required": ["path", "content"]
+          }
+        },
+        {
+          "name": "list_directory",
+          "description": "List files and subdirectories inside a directory.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string", "description": "Directory path to list" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "search_files",
+          "description": "Search for files matching a glob pattern or containing a text string.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path":    { "type": "string", "description": "Root directory to search from" },
+              "pattern": { "type": "string", "description": "Glob pattern or substring to match" }
+            },
+            "required": ["path", "pattern"]
+          }
+        }
+      ]
+    }
+  }
+}
