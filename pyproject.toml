@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tool-selector-mcp"
+version = "0.0.1"
+description = "MCP server that selects the best-suited downstream agent for a natural language query, distributed via uvx."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Gustavo Cayres" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-bdd>=7",
+]
+
+[project.scripts]
+tool-selector-mcp = "tool_selector_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tool_selector_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/pytest"]
+bdd_features_base_dir = "docs/features"
