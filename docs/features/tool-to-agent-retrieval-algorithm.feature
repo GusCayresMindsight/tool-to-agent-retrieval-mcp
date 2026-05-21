@@ -5,7 +5,9 @@ Feature: Tool-to-Agent Retrieval Algorithm
 
   The system models agents and tools as a bipartite graph G = (A, T, E) where
   ownership edges link each tool to its parent agent. Both are embedded in a shared
-  vector space and indexed in a unified catalog C = CT ∪ CA.
+  vector space and indexed in a unified catalog C = CT ∪ CA. A two-stage retrieval
+  pipeline first rewrites the user query into focused keywords using an LLM, then
+  performs vector similarity search over C.
 
   Background:
     Given a catalog containing the following agents:
@@ -52,3 +54,16 @@ Feature: Tool-to-Agent Retrieval Algorithm
     And "collab-mcp" has a tool "create_pr" described as "Open a new pull request on a GitHub repository"
     When the query "open a pull request" is submitted with K=3
     Then "collab-mcp" is returned in the results
+
+  Scenario: Two-stage retrieval rewrites the query before embedding search
+    Given the user query is "hey can you go ahead and open up a pull request for me on the bug fix branch"
+    When the retrieval pipeline runs stage 1 (LLM query rewrite)
+    Then the query is condensed to keywords focused on the action and target, e.g. "open pull request bug fix"
+    And the condensed query is passed to stage 2 (embedding similarity search)
+    And the top result is the agent "github-mcp"
+
+  Scenario: Two-stage retrieval can be bypassed when query rewriting is disabled
+    Given query rewriting is disabled
+    When the query "open a pull request" is submitted with K=1
+    Then the embedding search runs directly on the raw query
+    And "github-mcp" is returned in the results

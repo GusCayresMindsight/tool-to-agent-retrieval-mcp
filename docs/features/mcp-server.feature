@@ -1,7 +1,9 @@
 Feature: MCP Server
-  tool-selector-mcp is an MCP server that acts as a routing layer for multi-agent systems.
-  Given a natural language query, it identifies which MCP agents are best suited to fulfill it.
-  It does not execute tools itself — its sole responsibility is retrieval.
+  tool-selector-mcp is an MCP server designed to be the sole MCP server registered
+  in a client (Claude Desktop, Claude Code, etc.). All downstream agents live in the
+  corpus file rather than being registered directly. Given a natural language query,
+  it identifies the best-suited downstream agent, invokes the requested tool on that
+  agent, and returns the result to the client.
 
   Scenario: Starting the server via npx
     Given the tool-selector-mcp package is available on npm
@@ -32,12 +34,19 @@ Feature: MCP Server
     Then Claude Code starts the server automatically on launch
     And the tool-selector tools become available in the session
 
-  Scenario: Server acts as routing layer, not executor
+  Scenario: tool-selector-mcp is the only registered MCP server
+    Given a client configured with only "tool-selector-mcp" in its mcpServers
+    And downstream agents "github-mcp" and "slack-mcp" are defined in the corpus file
+    Then "github-mcp" and "slack-mcp" are not registered directly in the client
+    And they are only reachable through tool-selector-mcp
+
+  Scenario: Server executes the selected tool on the chosen downstream agent
     Given the server is running
-    And downstream agents "github-mcp" and "postgres-mcp" are registered
-    When a client queries the server for the best agent to handle a task
-    Then the server returns a ranked list of agents
-    But the server does not invoke any tool on the downstream agents
+    And the corpus contains agents with their command, args, and env
+    When a client invokes a tool through tool-selector-mcp
+    Then the server starts the chosen downstream agent using its command, args, and env
+    And the server forwards the tool call to that agent
+    And the server returns the downstream agent's result to the client
 
   Scenario: Server does not orchestrate multi-step workflows
     Given the server is running
