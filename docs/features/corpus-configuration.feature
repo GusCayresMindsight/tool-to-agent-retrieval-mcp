@@ -1,13 +1,13 @@
 Feature: Corpus Configuration
   The server loads its tool-agent catalog from a JSON corpus file at startup.
   The file path defaults to .mcp-corpus.json in the working directory where
-  npx is run, and can be overridden with the MCP_CORPUS_PATH environment variable.
-  Corpus env values may reference host environment variables using ${VAR_NAME}
-  syntax so secrets stay out of the file.
+  the server is launched, and can be overridden with the MCP_CORPUS_PATH
+  environment variable. Corpus env values may reference host environment
+  variables using ${VAR_NAME} syntax so secrets stay out of the file.
 
   Scenario: Server loads corpus from the default file path
     Given a file ".mcp-corpus.json" exists in the current working directory
-    When the server starts via "npx tool-selector-mcp"
+    When the server starts via "uvx tool-selector-mcp"
     Then the catalog is populated from ".mcp-corpus.json"
 
   Scenario: Server loads corpus from a custom path set via environment variable
