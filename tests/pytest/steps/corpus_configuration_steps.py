@@ -172,7 +172,19 @@ def _server_starts_via(command: str, bdd_state: dict) -> None:
 
 @when("the server starts")
 def _server_starts(bdd_state: dict) -> None:
-    _load_corpus_into_state(bdd_state)
+    from tool_selector_mcp.cli import build_server
+
+    state = _state(bdd_state)
+    state["resolved_path"] = resolve_corpus_path()
+    try:
+        server = build_server()
+        state["server"] = server
+        state["corpus"] = server.corpus
+        state["error"] = None
+    except Exception as exc:
+        state["server"] = None
+        state["corpus"] = None
+        state["error"] = exc
 
 
 @when(parsers.parse('the server launches "{agent_id}" to handle a tool call'))

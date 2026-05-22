@@ -202,13 +202,21 @@ def search(
     k: int = 1,
     *,
     rewrite: bool = True,
+    embedding: Any | None = None,
 ) -> list[RetrievalResult]:
     """Return up to ``k`` agents ranked by best match across CT ∪ CA.
 
     When ``rewrite`` is ``True`` the query is first condensed via
     :func:`rewrite_query`. Multiple high-scoring entries belonging to the
     same agent collapse to a single result for that agent.
+
+    When ``embedding`` is provided, scoring is delegated to
+    :func:`search_with_info` so that any conforming :class:`Embedding` can
+    drive similarity. When ``None``, the built-in token-overlap fast path
+    is used.
     """
+    if embedding is not None:
+        return search_with_info(corpus, query, k, rewrite=rewrite, embedding=embedding).results
     effective_query = rewrite_query(query) if rewrite else query
     query_kw = _keywords(effective_query)
     best_per_agent: dict[str, RetrievalResult] = {}

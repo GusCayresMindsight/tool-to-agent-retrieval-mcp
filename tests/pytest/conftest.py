@@ -23,6 +23,7 @@ pytest_plugins = [
     "steps.tool_to_agent_retrieval_steps",
     "steps.corpus_embedding_steps",
     "steps.embedding_interface_steps",
+    "steps.embedding_selection_steps",
     "steps.retrieval_loop_steps",
     "steps.scripted_embedding_steps",
     "steps.anthropic_embedding_steps",

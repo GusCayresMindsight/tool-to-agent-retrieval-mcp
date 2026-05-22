@@ -12,6 +12,7 @@ from steps import (  # noqa: F401
     corpus_configuration_steps,
     corpus_embedding_steps,
     embedding_interface_steps,
+    embedding_selection_steps,
     installation_steps,
     mcp_server_steps,
     minilm_embedding_steps,
