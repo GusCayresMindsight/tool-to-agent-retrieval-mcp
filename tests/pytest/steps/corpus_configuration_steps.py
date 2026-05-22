@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Any
 
 import pytest
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 from tool_selector_mcp.corpus import (
     Corpus,
@@ -18,7 +16,6 @@ from tool_selector_mcp.corpus import (
     resolve_corpus_path,
 )
 from tool_selector_mcp.server import ToolSelectorServer, make_recording_launcher
-
 
 # --- Helpers -------------------------------------------------------------
 
@@ -37,7 +34,9 @@ def _stash_path(bdd_state: dict, label: str, path: Path) -> None:
 @given(
     parsers.parse('a file ".mcp-corpus.json" exists in the current working directory'),
 )
-def _default_corpus_exists(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bdd_state: dict) -> None:
+def _default_corpus_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bdd_state: dict
+) -> None:
     monkeypatch.chdir(tmp_path)
     path = tmp_path / ".mcp-corpus.json"
     path.write_text(json.dumps({"mcpServers": {"default-agent": {"command": "echo"}}}))
@@ -120,7 +119,7 @@ def _unset_host_env(var: str, monkeypatch: pytest.MonkeyPatch) -> None:
 @given(
     parsers.parse(
         'the corpus contains "{agent_id}" with command "{command}", '
-        'args [{args}], and env {env_var}'
+        "args [{args}], and env {env_var}"
     )
 )
 def _corpus_with_executable_agent(
@@ -197,6 +196,7 @@ def _server_launches_agent(agent_id: str, bdd_state: dict) -> None:
     else:
         # Bypass the corpus lookup by calling the launcher directly.
         from tool_selector_mcp.server import LaunchCall  # noqa: F401
+
         launcher(agent, tool_name, {})
     _state(bdd_state)["launcher_calls"] = calls
 
@@ -247,7 +247,10 @@ def _catalog_populated_from(path: str, bdd_state: dict) -> None:
 def _default_path_not_read(path: str, bdd_state: dict) -> None:
     state = _state(bdd_state)
     resolved = state["resolved_path"]
-    assert Path(resolved).name != Path(path).name or _state(bdd_state).get("path_aliases", {}).get(path) is not None
+    assert (
+        Path(resolved).name != Path(path).name
+        or _state(bdd_state).get("path_aliases", {}).get(path) is not None
+    )
     # When MCP_CORPUS_PATH is set, resolve_corpus_path returns the env value
     # and the default file is never opened. Verify by checking the resolved
     # path is the aliased custom path, not the default.
@@ -280,7 +283,7 @@ def _agent_started_with_env(var: str, value: str, bdd_state: dict) -> None:
     assert calls[0].env.get(var) == value
 
 
-@then(parsers.parse('the server exits with an error indicating {var} is unresolved'))
+@then(parsers.parse("the server exits with an error indicating {var} is unresolved"))
 def _server_exit_env_unresolved(var: str, bdd_state: dict) -> None:
     err = _state(bdd_state)["error"]
     assert isinstance(err, CorpusEnvVarUnresolvedError)

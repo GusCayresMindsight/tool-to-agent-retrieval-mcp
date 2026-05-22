@@ -7,19 +7,18 @@ decorators with pytest-bdd before scenarios are collected.
 """
 
 from pytest_bdd import scenarios
-
 from steps import (  # noqa: F401
-    installation_steps,
-    mcp_server_steps,
+    anthropic_embedding_steps,
     corpus_configuration_steps,
-    server_tools_steps,
-    tool_to_agent_retrieval_steps,
     corpus_embedding_steps,
     embedding_interface_steps,
+    installation_steps,
+    mcp_server_steps,
+    minilm_embedding_steps,
     retrieval_loop_steps,
     scripted_embedding_steps,
-    anthropic_embedding_steps,
-    minilm_embedding_steps,
+    server_tools_steps,
+    tool_to_agent_retrieval_steps,
 )
 
 scenarios("installation.feature")

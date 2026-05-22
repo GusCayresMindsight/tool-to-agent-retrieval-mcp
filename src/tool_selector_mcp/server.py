@@ -13,8 +13,9 @@ core can be exercised in tests without spawning subprocesses.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any
 
 from .corpus import Agent, Corpus, Tool
 from .retrieval import search
@@ -159,9 +160,7 @@ class ToolSelectorServer:
             agent, target_tool = found
 
         if self._launcher is None:
-            raise RuntimeError(
-                "no launcher configured; cannot spawn downstream agent"
-            )
+            raise RuntimeError("no launcher configured; cannot spawn downstream agent")
         return self._launcher(agent, target_tool.name, arguments)
 
 

@@ -15,7 +15,6 @@ from typing import Any
 
 import pytest
 
-
 pytest_plugins = [
     "steps.installation_steps",
     "steps.mcp_server_steps",

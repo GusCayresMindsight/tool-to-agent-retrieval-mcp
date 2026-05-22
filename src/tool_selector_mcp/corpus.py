@@ -10,9 +10,10 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 DEFAULT_CORPUS_FILENAME = ".mcp-corpus.json"
 ENV_VAR_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
@@ -85,6 +86,7 @@ def _resolve_env_block(
 ) -> dict[str, str]:
     resolved: dict[str, str] = {}
     for key, value in env_block.items():
+
         def repl(match: re.Match[str]) -> str:
             name = match.group(1)
             if name not in host_env:

@@ -11,8 +11,7 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class Embedding(Protocol):
-    def __call__(self, query: str, text: str) -> float:
-        ...
+    def __call__(self, query: str, text: str) -> float: ...
 
 
 class TokenOverlapEmbedding:
@@ -20,6 +19,7 @@ class TokenOverlapEmbedding:
 
     def __call__(self, query: str, text: str) -> float:
         from .retrieval import _keywords, _score
+
         return _score(_keywords(query), text)
 
 
@@ -61,20 +61,23 @@ class AnthropicEmbedding:
 
     def __init__(self, api_key: str | None = None) -> None:
         import anthropic
+
         self._client = anthropic.Anthropic(api_key=api_key)
 
     def __call__(self, query: str, text: str) -> float:
         message = self._client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=16,
-            messages=[{
-                "role": "user",
-                "content": (
-                    "Rate how relevant this text is to the query. "
-                    "Respond with only a float between 0.0 and 1.0.\n"
-                    f"Query: {query}\nText: {text}"
-                ),
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        "Rate how relevant this text is to the query. "
+                        "Respond with only a float between 0.0 and 1.0.\n"
+                        f"Query: {query}\nText: {text}"
+                    ),
+                }
+            ],
         )
         raw = message.content[0].text.strip()
         return min(1.0, max(0.0, float(raw)))
@@ -93,11 +96,13 @@ class AllMiniLML6V2Embedding:
     def _get_model(self):
         if self._model is None:
             from sentence_transformers import SentenceTransformer
+
             self._model = SentenceTransformer("all-MiniLM-L6-v2")
         return self._model
 
     def __call__(self, query: str, text: str) -> float:
         import numpy as np
+
         model = self._get_model()
         vecs = model.encode([query, text], normalize_embeddings=True)
         sim = float(np.dot(vecs[0], vecs[1]))

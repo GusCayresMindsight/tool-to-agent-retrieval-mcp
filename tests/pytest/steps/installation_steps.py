@@ -15,12 +15,11 @@ import shutil
 from pathlib import Path
 
 import pytest
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 from tool_selector_mcp import cli
 from tool_selector_mcp.corpus import Corpus
 from tool_selector_mcp.server import ToolSelectorServer
-
 
 # --- Background -----------------------------------------------------------
 

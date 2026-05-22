@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
-import pytest
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 from tool_selector_mcp.corpus import Agent, Corpus, Tool
 from tool_selector_mcp.retrieval import rewrite_query, search
@@ -54,9 +52,7 @@ def _catalog_tools(datatable, bdd_state: dict) -> None:
         tool_id = row[columns["tool_id"]]
         description = row[columns["description"]]
         owner = row[columns["owner"]]
-        tools_by_owner.setdefault(owner, []).append(
-            Tool(name=tool_id, description=description)
-        )
+        tools_by_owner.setdefault(owner, []).append(Tool(name=tool_id, description=description))
     new_agents: dict[str, Agent] = {}
     for agent_id, agent in agents.items():
         new_agents[agent_id] = Agent(
@@ -81,14 +77,8 @@ def _additional_agent(agent_id: str, description: str, bdd_state: dict) -> None:
     state["corpus"] = Corpus(agents=state["agents"])
 
 
-@given(
-    parsers.parse(
-        '"{agent_id}" has a tool "{tool_name}" described as "{description}"'
-    )
-)
-def _additional_tool(
-    agent_id: str, tool_name: str, description: str, bdd_state: dict
-) -> None:
+@given(parsers.parse('"{agent_id}" has a tool "{tool_name}" described as "{description}"'))
+def _additional_tool(agent_id: str, tool_name: str, description: str, bdd_state: dict) -> None:
     state = _state(bdd_state)
     agent = state["agents"][agent_id]
     new_agent = Agent(
@@ -121,11 +111,7 @@ def _rewrite_disabled(bdd_state: dict) -> None:
 # --- When steps ----------------------------------------------------------
 
 
-@when(
-    parsers.parse(
-        'the query "{query}" is submitted directly with K={k:d}'
-    )
-)
+@when(parsers.parse('the query "{query}" is submitted directly with K={k:d}'))
 def _query_submitted_directly(query: str, k: int, bdd_state: dict) -> None:
     state = _state(bdd_state)
     rewrite = state.get("rewrite", True)
@@ -152,8 +138,7 @@ def _submit_sub_queries(bdd_state: dict) -> None:
     state = _state(bdd_state)
     rewrite = state.get("rewrite", True)
     state["sub_results"] = [
-        search(state["corpus"], q, k=1, rewrite=rewrite)
-        for q in state["sub_queries"]
+        search(state["corpus"], q, k=1, rewrite=rewrite) for q in state["sub_queries"]
     ]
 
 
@@ -204,7 +189,7 @@ def _combined_covers_both(bdd_state: dict) -> None:
 
 @then(
     parsers.re(
-        r'the query is condensed to keywords focused on the action and target,'
+        r"the query is condensed to keywords focused on the action and target,"
         r' e\.g\. "(?P<example>[^"]+)"'
     )
 )
@@ -222,9 +207,7 @@ def _query_condensed(example: str, bdd_state: dict) -> None:
     # The example calls out the core action and target keywords; require the
     # rewrite to retain those exact tokens.
     for keyword in example.split():
-        assert keyword in rewritten_tokens, (
-            f"missing keyword {keyword!r} in rewrite {rewritten!r}"
-        )
+        assert keyword in rewritten_tokens, f"missing keyword {keyword!r} in rewrite {rewritten!r}"
 
 
 @then("the condensed query is passed to stage 2 (embedding similarity search)")
@@ -234,9 +217,7 @@ def _passed_to_stage_two(bdd_state: dict) -> None:
     # Stage 2: re-run the search but pass the already-rewritten query and
     # disable a second pass of rewriting, so the test observes that the
     # condensed query is what reaches the similarity step.
-    state["stage_two_results"] = search(
-        state["corpus"], rewritten, k=1, rewrite=False
-    )
+    state["stage_two_results"] = search(state["corpus"], rewritten, k=1, rewrite=False)
 
 
 @then("the embedding search runs directly on the raw query")

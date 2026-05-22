@@ -24,7 +24,7 @@ class _FakeNumpy:
     """Minimal numpy stand-in for AllMiniLML6V2Embedding.__call__."""
 
     def dot(self, a, b) -> float:
-        return float(sum(x * y for x, y in zip(a, b)))
+        return float(sum(x * y for x, y in zip(a, b, strict=True)))
 
 
 def _make_mock_model() -> MagicMock:
@@ -57,6 +57,7 @@ def _minilm_bare(monkeypatch: pytest.MonkeyPatch, bdd_state: dict) -> None:
     mock_model, fake_np = _setup_mocks(monkeypatch)
 
     from tool_selector_mcp.embeddings import AllMiniLML6V2Embedding
+
     emb = AllMiniLML6V2Embedding()
     emb._model = mock_model
 
@@ -70,6 +71,7 @@ def _minilm_single_instance(monkeypatch: pytest.MonkeyPatch, bdd_state: dict) ->
     mock_model, fake_np = _setup_mocks(monkeypatch)
 
     from tool_selector_mcp.embeddings import AllMiniLML6V2Embedding
+
     emb = AllMiniLML6V2Embedding()
     emb._model = mock_model
 

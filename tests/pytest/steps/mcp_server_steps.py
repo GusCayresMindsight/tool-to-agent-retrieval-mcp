@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 from tool_selector_mcp.corpus import Agent, Corpus, Tool
 from tool_selector_mcp.server import ToolSelectorServer, make_recording_launcher
@@ -39,9 +39,7 @@ def _client_config_only_selector() -> dict:
 
 
 @given(
-    parsers.parse(
-        'downstream agents "{first}" and "{second}" are defined in the corpus file'
-    ),
+    parsers.parse('downstream agents "{first}" and "{second}" are defined in the corpus file'),
     target_fixture="corpus",
 )
 def _agents_in_corpus(first: str, second: str) -> Corpus:
@@ -53,9 +51,7 @@ def _agents_in_corpus(first: str, second: str) -> Corpus:
     )
 
 
-@then(
-    parsers.parse('"{first}" and "{second}" are not registered directly in the client')
-)
+@then(parsers.parse('"{first}" and "{second}" are not registered directly in the client'))
 def _agents_not_in_client(first: str, second: str, client_config: dict) -> None:
     registered = set(client_config["mcpServers"].keys())
     assert first not in registered
@@ -150,14 +146,20 @@ def _multi_step_query(bdd_state: dict) -> None:
                 "github-mcp",
                 description="Interact with GitHub repositories, issues, and PRs",
                 tools=(
-                    Tool(name="list_issues", description="List open issues for a repository"),
+                    Tool(
+                        name="list_issues",
+                        description="List open issues for a repository",
+                    ),
                 ),
             ),
             "slack-mcp": _agent(
                 "slack-mcp",
                 description="Send messages and manage Slack workspaces",
                 tools=(
-                    Tool(name="send_message", description="Send a message to a Slack channel"),
+                    Tool(
+                        name="send_message",
+                        description="Send a message to a Slack channel",
+                    ),
                 ),
             ),
         }
@@ -181,9 +183,7 @@ def _relevant_per_step(bdd_state: dict) -> None:
 def _no_orchestration(bdd_state: dict) -> None:
     server = bdd_state["server"]
     public = {
-        name
-        for name in dir(server)
-        if not name.startswith("_") and callable(getattr(server, name))
+        name for name in dir(server) if not name.startswith("_") and callable(getattr(server, name))
     }
     # The server's public surface is the three MCP tools; no orchestration verb.
     assert "search_tools" in public

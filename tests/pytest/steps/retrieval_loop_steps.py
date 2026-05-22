@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pytest_bdd import when, then, parsers
-
+from pytest_bdd import parsers, then, when
 
 # Background Given steps (agent/tool table) are already defined in
 # tool_to_agent_retrieval_steps.py and share the 'retrieval' namespace.
@@ -44,7 +43,7 @@ def _loop_ranks_all(bdd_state: dict) -> None:
     # Verify ordering: scores are non-increasing
     for i in range(len(results) - 1):
         assert results[i].score >= results[i + 1].score, (
-            f"results not sorted: {results[i].score} < {results[i+1].score}"
+            f"results not sorted: {results[i].score} < {results[i + 1].score}"
         )
 
 
@@ -159,6 +158,4 @@ def _exhausts_all(bdd_state: dict) -> None:
     total = state["total_catalog_size"]
     n = state["n"]
     pool = min(n, total)
-    assert evaluated >= pool, (
-        f"loop exited early (evaluated={evaluated}, pool={pool})"
-    )
+    assert evaluated >= pool, f"loop exited early (evaluated={evaluated}, pool={pool})"

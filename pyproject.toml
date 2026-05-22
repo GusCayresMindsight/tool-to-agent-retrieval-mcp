@@ -16,6 +16,7 @@ dependencies = ["mcp>=1.0"]
 dev = [
     "pytest>=8",
     "pytest-bdd>=7",
+    "ruff>=0.6",
 ]
 
 [project.scripts]
@@ -27,3 +28,14 @@ packages = ["src/tool_selector_mcp"]
 [tool.pytest.ini_options]
 testpaths = ["tests/pytest"]
 bdd_features_base_dir = "docs/features"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "dist", "build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = [
+    "E501",  # line too long — ruff format handles line breaks
+]

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pytest_bdd import given, when, then, parsers
-
+from pytest_bdd import given, parsers, then, when
 
 # ---------------------------------------------------------------------------
 # Namespace helpers
 # ---------------------------------------------------------------------------
+
 
 def _r(bdd_state: dict) -> dict:
     """Background data lives in the 'retrieval' namespace (shared steps)."""
@@ -29,7 +29,7 @@ def _given_query(query: str, bdd_state: dict) -> None:
     _s(bdd_state)["query"] = query
 
 
-@given("a mock embedding that returns 1.0 for any text containing \"pull request\"")
+@given('a mock embedding that returns 1.0 for any text containing "pull request"')
 def _mock_embedding_init(bdd_state: dict) -> None:
     _s(bdd_state)["mock_rule"] = "pull request"
 
@@ -68,7 +68,11 @@ def _build_ct(bdd_state: dict) -> None:
     ct: dict[str, dict] = {}
     for agent in corpus.agents.values():
         for tool in agent.tools:
-            ct[tool.name] = {"description": tool.description, "owner": agent.agent_id, "type": "tool"}
+            ct[tool.name] = {
+                "description": tool.description,
+                "owner": agent.agent_id,
+                "type": "tool",
+            }
     _s(bdd_state)["CT"] = ct
 
 
@@ -88,10 +92,18 @@ def _build_c(bdd_state: dict) -> None:
     ct: dict[str, dict] = {}
     ca: dict[str, dict] = {}
     for agent in corpus.agents.values():
-        ca[agent.agent_id] = {"description": agent.description, "type": "agent", "owner": None}
+        ca[agent.agent_id] = {
+            "description": agent.description,
+            "type": "agent",
+            "owner": None,
+        }
         c[agent.agent_id] = ca[agent.agent_id]
         for tool in agent.tools:
-            entry = {"description": tool.description, "type": "tool", "owner": agent.agent_id}
+            entry = {
+                "description": tool.description,
+                "type": "tool",
+                "owner": agent.agent_id,
+            }
             ct[tool.name] = entry
             c[tool.name] = entry
     _s(bdd_state).update({"C": c, "CT": ct, "CA": ca})
@@ -245,6 +257,4 @@ def _receives_score(name: str, expected: float, bdd_state: dict) -> None:
 def _mock_invoked_for_all(bdd_state: dict) -> None:
     mock = _s(bdd_state)["mock_embedding"]
     c = _s(bdd_state)["C"]
-    assert mock.call_count == len(c), (
-        f"mock called {mock.call_count} times for {len(c)} entries"
-    )
+    assert mock.call_count == len(c), f"mock called {mock.call_count} times for {len(c)} entries"

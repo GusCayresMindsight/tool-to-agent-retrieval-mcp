@@ -10,7 +10,7 @@ these shared steps can serve every embedding scenario.
 
 from __future__ import annotations
 
-from pytest_bdd import given, when, then
+from pytest_bdd import given, then, when
 
 
 def _s(bdd_state: dict) -> dict:
@@ -25,6 +25,7 @@ def _s(bdd_state: dict) -> dict:
 @given("an embedding implementation")
 def _embedding_impl(bdd_state: dict) -> None:
     from tool_selector_mcp.embeddings import TokenOverlapEmbedding
+
     _s(bdd_state)["embedding"] = TokenOverlapEmbedding()
 
 
@@ -39,7 +40,12 @@ def _no_embedding(bdd_state: dict) -> None:
             command="echo",
             args=(),
             env={},
-            tools=(Tool(name="create_pull_request", description="Open a new pull request on a GitHub repository"),),
+            tools=(
+                Tool(
+                    name="create_pull_request",
+                    description="Open a new pull request on a GitHub repository",
+                ),
+            ),
         )
     }
     _s(bdd_state)["corpus"] = Corpus(agents=agents)
@@ -51,12 +57,10 @@ def _no_embedding(bdd_state: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-@when("it scores the query \"open a pull request\" against \"Open a new pull request on GitHub\"")
+@when('it scores the query "open a pull request" against "Open a new pull request on GitHub"')
 def _score_specific(bdd_state: dict) -> None:
     emb = _s(bdd_state)["embedding"]
-    _s(bdd_state)["score"] = emb(
-        "open a pull request", "Open a new pull request on GitHub"
-    )
+    _s(bdd_state)["score"] = emb("open a pull request", "Open a new pull request on GitHub")
 
 
 @when("it scores any query against any target text")
@@ -64,6 +68,7 @@ def _score_any(bdd_state: dict) -> None:
     emb = _s(bdd_state).get("embedding")
     if emb is None:
         from tool_selector_mcp.retrieval import search
+
         corpus = _s(bdd_state)["corpus"]
         results = search(corpus, "open a pull request", k=1)
         _s(bdd_state)["search_results"] = results
@@ -83,6 +88,7 @@ def _score_multiple(bdd_state: dict) -> None:
 @when("the retrieval algorithm runs a query against the catalog")
 def _run_retrieval(bdd_state: dict) -> None:
     from tool_selector_mcp.retrieval import search
+
     corpus = _s(bdd_state)["corpus"]
     _s(bdd_state)["search_results"] = search(corpus, "open a pull request", k=1)
 

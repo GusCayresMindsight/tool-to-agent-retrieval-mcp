@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from typing import Any
 
-import pytest
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 from tool_selector_mcp.corpus import Agent, Corpus, Tool
 from tool_selector_mcp.server import (
@@ -15,7 +13,6 @@ from tool_selector_mcp.server import (
     UnknownToolError,
     make_recording_launcher,
 )
-
 
 # --- Helpers -------------------------------------------------------------
 
@@ -102,7 +99,7 @@ def _state(bdd_state: dict) -> dict:
 
 @given(
     parsers.re(
-        r'the server is running with a corpus containing '
+        r"the server is running with a corpus containing "
         r'"(?P<a>[^"]+)", "(?P<b>[^"]+)", and "(?P<c>[^"]+)"'
     )
 )
@@ -134,9 +131,17 @@ def _corpus_with_large_schema(agent_id: str, tool_name: str, bdd_state: dict) ->
         "properties": {f"field_{i}": {"type": "string"} for i in range(50)},
         "required": [f"field_{i}" for i in range(10)],
     }
-    tools = (Tool(name=tool_name, description="Open a new pull request on a GitHub repository", input_schema=big_schema),)
+    tools = (
+        Tool(
+            name=tool_name,
+            description="Open a new pull request on a GitHub repository",
+            input_schema=big_schema,
+        ),
+    )
     corpus = Corpus(
-        agents={agent_id: _agent(agent_id, _DEFAULT_AGENT_DESCRIPTIONS.get(agent_id, ""), tools=tools)}
+        agents={
+            agent_id: _agent(agent_id, _DEFAULT_AGENT_DESCRIPTIONS.get(agent_id, ""), tools=tools)
+        }
     )
     calls, launcher = make_recording_launcher()
     _state(bdd_state)["server"] = ToolSelectorServer(corpus, launcher=launcher)
@@ -145,14 +150,8 @@ def _corpus_with_large_schema(agent_id: str, tool_name: str, bdd_state: dict) ->
     _state(bdd_state)["large_schema"] = big_schema
 
 
-@given(
-    parsers.parse(
-        'the corpus contains "{agent_id}" with tools "{first}" and "{second}"'
-    )
-)
-def _corpus_with_two_tools(
-    agent_id: str, first: str, second: str, bdd_state: dict
-) -> None:
+@given(parsers.parse('the corpus contains "{agent_id}" with tools "{first}" and "{second}"'))
+def _corpus_with_two_tools(agent_id: str, first: str, second: str, bdd_state: dict) -> None:
     by_name = {t.name: t for t in _default_tools()[agent_id]}
     tools = (by_name[first], by_name[second])
     corpus = Corpus(
@@ -207,31 +206,19 @@ def _corpus_tool_owned_by(tool_name: str, agent_id: str, bdd_state: dict) -> Non
 # --- When steps ----------------------------------------------------------
 
 
-@when(
-    parsers.parse(
-        'search_tools is called with query "{query}" and K={k:d}'
-    )
-)
+@when(parsers.parse('search_tools is called with query "{query}" and K={k:d}'))
 def _call_search_with_k(query: str, k: int, bdd_state: dict) -> None:
     server: ToolSelectorServer = _state(bdd_state)["server"]
     _state(bdd_state)["search_result"] = server.search_tools(query, k=k)
 
 
-@when(
-    parsers.parse(
-        'search_tools is called with query "{query}" without specifying K'
-    )
-)
+@when(parsers.parse('search_tools is called with query "{query}" without specifying K'))
 def _call_search_default(query: str, bdd_state: dict) -> None:
     server: ToolSelectorServer = _state(bdd_state)["server"]
     _state(bdd_state)["search_result"] = server.search_tools(query)
 
 
-@when(
-    parsers.re(
-        r'get_tool_details is called with \[(?P<ids>.+)\]$'
-    )
-)
+@when(parsers.re(r"get_tool_details is called with \[(?P<ids>.+)\]$"))
 def _call_get_tool_details(ids: str, bdd_state: dict) -> None:
     tool_ids = [s.strip().strip('"') for s in ids.split(",")]
     server: ToolSelectorServer = _state(bdd_state)["server"]
@@ -246,27 +233,21 @@ def _call_get_tool_details(ids: str, bdd_state: dict) -> None:
 @when(
     parsers.parse(
         'invoke_tool is called with server "{server_id}", tool "{tool_name}", '
-        'and arguments {arguments}'
+        "and arguments {arguments}"
     )
 )
 def _invoke_with_server(server_id: str, tool_name: str, arguments: str, bdd_state: dict) -> None:
     server: ToolSelectorServer = _state(bdd_state)["server"]
     args = json.loads(arguments)
     try:
-        _state(bdd_state)["invoke_result"] = server.invoke_tool(
-            tool_name, args, server=server_id
-        )
+        _state(bdd_state)["invoke_result"] = server.invoke_tool(tool_name, args, server=server_id)
         _state(bdd_state)["invoke_error"] = None
     except UnknownToolError as exc:
         _state(bdd_state)["invoke_result"] = None
         _state(bdd_state)["invoke_error"] = exc
 
 
-@when(
-    parsers.parse(
-        'invoke_tool is called with tool "{tool_name}" and arguments {arguments}'
-    )
-)
+@when(parsers.parse('invoke_tool is called with tool "{tool_name}" and arguments {arguments}'))
 def _invoke_with_tool_only(tool_name: str, arguments: str, bdd_state: dict) -> None:
     server: ToolSelectorServer = _state(bdd_state)["server"]
     args = json.loads(arguments)
@@ -321,9 +302,7 @@ def _result_no_schema(bdd_state: dict) -> None:
     big = _state(bdd_state).get("large_schema")
     for hit in hits:
         as_dict = asdict(hit)
-        assert "input_schema" not in as_dict, (
-            f"unexpected input_schema in search hit: {as_dict}"
-        )
+        assert "input_schema" not in as_dict, f"unexpected input_schema in search hit: {as_dict}"
         if big is not None:
             for value in as_dict.values():
                 if isinstance(value, dict):

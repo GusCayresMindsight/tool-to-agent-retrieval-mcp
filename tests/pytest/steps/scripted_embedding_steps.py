@@ -8,7 +8,7 @@ all embedding modules share bdd_state["emb_test"] as the state key.
 
 from __future__ import annotations
 
-from pytest_bdd import given, when, then, parsers
+from pytest_bdd import given, parsers, then, when
 
 
 def _s(bdd_state: dict) -> dict:
@@ -26,10 +26,7 @@ def _scripted_from_table(datatable, bdd_state: dict) -> None:
 
     header, *rows = datatable
     columns = {col: i for i, col in enumerate(header)}
-    scores = {
-        row[columns["text"]]: float(row[columns["score"]])
-        for row in rows
-    }
+    scores = {row[columns["text"]]: float(row[columns["score"]]) for row in rows}
     _s(bdd_state)["embedding"] = ScriptedEmbedding(scores=scores)
 
 
@@ -53,9 +50,7 @@ def _scripted_fixed_score(bdd_state: dict) -> None:
 def _scripted_bare(bdd_state: dict) -> None:
     from tool_selector_mcp.embeddings import ScriptedEmbedding
 
-    _s(bdd_state)["embedding"] = ScriptedEmbedding(
-        scores={"known text": 0.7}, default=0.3
-    )
+    _s(bdd_state)["embedding"] = ScriptedEmbedding(scores={"known text": 0.7}, default=0.3)
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +58,7 @@ def _scripted_bare(bdd_state: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-@when("it scores any query against \"Open a new pull request on a GitHub repository\"")
+@when('it scores any query against "Open a new pull request on a GitHub repository"')
 def _score_known_text(bdd_state: dict) -> None:
     emb = _s(bdd_state)["embedding"]
     _s(bdd_state)["score"] = emb("any query", "Open a new pull request on a GitHub repository")
@@ -99,6 +94,4 @@ def _returns_value(expected: float, bdd_state: dict) -> None:
 @then("both calls return the same score")
 def _same_score(bdd_state: dict) -> None:
     s = _s(bdd_state)
-    assert s["score_a"] == s["score_b"], (
-        f"scores differ: {s['score_a']} vs {s['score_b']}"
-    )
+    assert s["score_a"] == s["score_b"], f"scores differ: {s['score_a']} vs {s['score_b']}"

@@ -35,6 +35,7 @@ def _make_embedding(mock_client: MagicMock):
 
     with patch.dict("sys.modules", {"anthropic": fake_anthropic}):
         from tool_selector_mcp.embeddings import AnthropicEmbedding
+
         emb = AnthropicEmbedding(api_key="test-key")
     # Ensure the mock client is wired up regardless of caching
     emb._client = mock_client
