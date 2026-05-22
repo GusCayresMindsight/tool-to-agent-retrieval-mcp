@@ -56,3 +56,19 @@ Feature: Server Tools
     Given the corpus does not contain a tool named "unknown_tool"
     When invoke_tool is called with tool "unknown_tool" and arguments {}
     Then the server returns an error indicating the tool was not found
+
+  Scenario: invoke_tool_async delegates to an async launcher and returns its result
+    Given the corpus contains agent "github-mcp" with tool "create_pull_request" and an async recording launcher
+    When invoke_tool_async is called with tool "create_pull_request" and arguments {"title": "Fix"}
+    Then the async launcher recorded a call for agent "github-mcp" tool "create_pull_request"
+    And the async result contains the invocation response
+
+  Scenario: invoke_tool_async raises RuntimeError when no launcher is configured
+    Given the corpus contains agent "github-mcp" with tool "create_pull_request" and no launcher
+    When invoke_tool_async is called with tool "create_pull_request" and arguments {}
+    Then a RuntimeError is raised with message "no launcher configured"
+
+  Scenario: invoke_tool_async raises UnknownToolError for a missing tool
+    Given the corpus contains agent "github-mcp" with tool "create_pull_request" and an async recording launcher
+    When invoke_tool_async is called with tool "nonexistent_tool" and arguments {}
+    Then an UnknownToolError is raised

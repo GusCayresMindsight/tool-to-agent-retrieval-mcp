@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import asdict
 
@@ -11,6 +12,7 @@ from tool_selector_mcp.corpus import Agent, Corpus, Tool
 from tool_selector_mcp.server import (
     ToolSelectorServer,
     UnknownToolError,
+    make_recording_async_launcher,
     make_recording_launcher,
 )
 
@@ -191,6 +193,36 @@ def _corpus_with_agent_and_tool(agent_id: str, tool_name: str, bdd_state: dict) 
     _state(bdd_state)["corpus"] = corpus
 
 
+@given(
+    parsers.parse(
+        'the corpus contains agent "{agent_id}" with tool "{tool_name}" and an async recording launcher'
+    )
+)
+def _corpus_with_agent_tool_async_launcher(agent_id: str, tool_name: str, bdd_state: dict) -> None:
+    tool = next(t for t in _default_tools()[agent_id] if t.name == tool_name)
+    corpus = Corpus(
+        agents={agent_id: _agent(agent_id, _DEFAULT_AGENT_DESCRIPTIONS[agent_id], tools=(tool,))}
+    )
+    calls, launcher = make_recording_async_launcher()
+    _state(bdd_state)["server"] = ToolSelectorServer(corpus, launcher=launcher)
+    _state(bdd_state)["async_calls"] = calls
+    _state(bdd_state)["corpus"] = corpus
+
+
+@given(
+    parsers.parse(
+        'the corpus contains agent "{agent_id}" with tool "{tool_name}" and no launcher'
+    )
+)
+def _corpus_with_agent_tool_no_launcher(agent_id: str, tool_name: str, bdd_state: dict) -> None:
+    tool = next(t for t in _default_tools()[agent_id] if t.name == tool_name)
+    corpus = Corpus(
+        agents={agent_id: _agent(agent_id, _DEFAULT_AGENT_DESCRIPTIONS[agent_id], tools=(tool,))}
+    )
+    _state(bdd_state)["server"] = ToolSelectorServer(corpus)
+    _state(bdd_state)["corpus"] = corpus
+
+
 @given(parsers.parse('the corpus contains tool "{tool_name}" owned by "{agent_id}"'))
 def _corpus_tool_owned_by(tool_name: str, agent_id: str, bdd_state: dict) -> None:
     tool = next(t for t in _default_tools()[agent_id] if t.name == tool_name)
@@ -359,3 +391,56 @@ def _invoke_forward_and_return(bdd_state: dict) -> None:
     assert call.arguments == {"repo": "my-repo", "title": "Fix bug"}
     result = _state(bdd_state)["invoke_result"]
     assert result["ok"] is True
+
+
+# --- invoke_tool_async when/then steps -----------------------------------
+
+
+@when(
+    parsers.parse('invoke_tool_async is called with tool "{tool_name}" and arguments {arguments}')
+)
+def _invoke_async_with_tool(tool_name: str, arguments: str, bdd_state: dict) -> None:
+    server: ToolSelectorServer = _state(bdd_state)["server"]
+    args = json.loads(arguments)
+    try:
+        _state(bdd_state)["async_result"] = asyncio.run(
+            server.invoke_tool_async(tool_name, args)
+        )
+        _state(bdd_state)["async_error"] = None
+    except (UnknownToolError, RuntimeError) as exc:
+        _state(bdd_state)["async_result"] = None
+        _state(bdd_state)["async_error"] = exc
+
+
+@then(
+    parsers.parse(
+        'the async launcher recorded a call for agent "{agent_id}" tool "{tool_name}"'
+    )
+)
+def _async_launcher_recorded(agent_id: str, tool_name: str, bdd_state: dict) -> None:
+    calls = _state(bdd_state)["async_calls"]
+    assert len(calls) == 1
+    assert calls[0].agent_id == agent_id
+    assert calls[0].tool_name == tool_name
+
+
+@then("the async result contains the invocation response")
+def _async_result_ok(bdd_state: dict) -> None:
+    result = _state(bdd_state)["async_result"]
+    assert result is not None
+    assert result["ok"] is True
+
+
+@then(parsers.parse('a RuntimeError is raised with message "{message}"'))
+def _runtime_error_raised(message: str, bdd_state: dict) -> None:
+    err = _state(bdd_state).get("async_error")
+    assert err is not None, "expected a RuntimeError but none was raised"
+    assert isinstance(err, RuntimeError)
+    assert message in str(err)
+
+
+@then("an UnknownToolError is raised")
+def _unknown_tool_error_raised(bdd_state: dict) -> None:
+    err = _state(bdd_state).get("async_error")
+    assert err is not None, "expected an UnknownToolError but none was raised"
+    assert isinstance(err, UnknownToolError)

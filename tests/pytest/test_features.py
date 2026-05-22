@@ -19,6 +19,7 @@ from steps import (  # noqa: F401
     retrieval_loop_steps,
     scripted_embedding_steps,
     server_tools_steps,
+    subprocess_launcher_steps,
     tool_to_agent_retrieval_steps,
 )
 
@@ -33,3 +34,4 @@ scenarios("algorithms/tool-to-agent-retrieval-loop.feature")
 scenarios("algorithms/embeddings/scripted.feature")
 scenarios("algorithms/embeddings/anthropic.feature")
 scenarios("algorithms/embeddings/all-minilm-l6-v2.feature")
+scenarios("subprocess-launcher.feature")
