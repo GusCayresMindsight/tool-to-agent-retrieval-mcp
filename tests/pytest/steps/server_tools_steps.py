@@ -210,9 +210,7 @@ def _corpus_with_agent_tool_async_launcher(agent_id: str, tool_name: str, bdd_st
 
 
 @given(
-    parsers.parse(
-        'the corpus contains agent "{agent_id}" with tool "{tool_name}" and no launcher'
-    )
+    parsers.parse('the corpus contains agent "{agent_id}" with tool "{tool_name}" and no launcher')
 )
 def _corpus_with_agent_tool_no_launcher(agent_id: str, tool_name: str, bdd_state: dict) -> None:
     tool = next(t for t in _default_tools()[agent_id] if t.name == tool_name)
@@ -403,20 +401,14 @@ def _invoke_async_with_tool(tool_name: str, arguments: str, bdd_state: dict) -> 
     server: ToolSelectorServer = _state(bdd_state)["server"]
     args = json.loads(arguments)
     try:
-        _state(bdd_state)["async_result"] = asyncio.run(
-            server.invoke_tool_async(tool_name, args)
-        )
+        _state(bdd_state)["async_result"] = asyncio.run(server.invoke_tool_async(tool_name, args))
         _state(bdd_state)["async_error"] = None
     except (UnknownToolError, RuntimeError) as exc:
         _state(bdd_state)["async_result"] = None
         _state(bdd_state)["async_error"] = exc
 
 
-@then(
-    parsers.parse(
-        'the async launcher recorded a call for agent "{agent_id}" tool "{tool_name}"'
-    )
-)
+@then(parsers.parse('the async launcher recorded a call for agent "{agent_id}" tool "{tool_name}"'))
 def _async_launcher_recorded(agent_id: str, tool_name: str, bdd_state: dict) -> None:
     calls = _state(bdd_state)["async_calls"]
     assert len(calls) == 1

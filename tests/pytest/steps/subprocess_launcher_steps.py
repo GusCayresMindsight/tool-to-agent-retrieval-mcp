@@ -46,11 +46,7 @@ def _build_mock_client(return_value: object = None) -> dict:
 # --- Given steps ---------------------------------------------------------
 
 
-@given(
-    parsers.parse(
-        'a subprocess launcher agent with command "{command}" and args {args_json}'
-    )
-)
+@given(parsers.parse('a subprocess launcher agent with command "{command}" and args {args_json}'))
 def _agent_for_launcher(command: str, args_json: str, bdd_state: dict) -> None:
     args = json.loads(args_json)
     _state(bdd_state)["agent"] = Agent(
@@ -103,11 +99,7 @@ def _call_subprocess_launcher(tool_name: str, args_json: str, bdd_state: dict) -
 # --- Then steps ----------------------------------------------------------
 
 
-@then(
-    parsers.parse(
-        'stdio_client received command "{command}" and args {args_json}'
-    )
-)
+@then(parsers.parse('stdio_client received command "{command}" and args {args_json}'))
 def _stdio_client_received_params(command: str, args_json: str, bdd_state: dict) -> None:
     state = _state(bdd_state)
     expected_args = json.loads(args_json)
