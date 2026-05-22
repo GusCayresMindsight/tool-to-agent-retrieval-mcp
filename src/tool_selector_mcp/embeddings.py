@@ -59,10 +59,13 @@ class AnthropicEmbedding:
     Requires an ``ANTHROPIC_API_KEY`` environment variable (or explicit key).
     """
 
-    def __init__(self, api_key: str | None = None) -> None:
-        import anthropic
+    def __init__(self, api_key: str | None = None, *, client=None) -> None:
+        if client is not None:
+            self._client = client
+        else:
+            import anthropic
 
-        self._client = anthropic.Anthropic(api_key=api_key)
+            self._client = anthropic.Anthropic(api_key=api_key)
 
     def __call__(self, query: str, text: str) -> float:
         message = self._client.messages.create(

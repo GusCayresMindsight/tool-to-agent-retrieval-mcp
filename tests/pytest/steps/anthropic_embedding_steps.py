@@ -9,7 +9,7 @@ requiring the SDK to be installed.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from pytest_bdd import given, then
 
@@ -29,17 +29,9 @@ def _make_mock_client(score: float = 0.85) -> MagicMock:
 
 
 def _make_embedding(mock_client: MagicMock):
-    """Instantiate AnthropicEmbedding with the anthropic SDK mocked out."""
-    fake_anthropic = MagicMock()
-    fake_anthropic.Anthropic.return_value = mock_client
+    from tool_selector_mcp.embeddings import AnthropicEmbedding
 
-    with patch.dict("sys.modules", {"anthropic": fake_anthropic}):
-        from tool_selector_mcp.embeddings import AnthropicEmbedding
-
-        emb = AnthropicEmbedding(api_key="test-key")
-    # Ensure the mock client is wired up regardless of caching
-    emb._client = mock_client
-    return emb
+    return AnthropicEmbedding(client=mock_client)
 
 
 # ---------------------------------------------------------------------------
