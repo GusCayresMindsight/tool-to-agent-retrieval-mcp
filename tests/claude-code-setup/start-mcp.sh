@@ -22,5 +22,6 @@ case "$EMBEDDING" in
 esac
 
 export MCP_CORPUS_PATH="$HERE/.mcp-corpus.json"
+[ -n "$EMBEDDING" ] && export TOOL_SELECTOR_EMBEDDING="$EMBEDDING"
 
 exec uv run --project "$PROJECT_ROOT" "${EXTRA[@]}" tool-selector-mcp

@@ -5,6 +5,13 @@ export MCP_CORPUS_PATH := $(CORPUS)
 
 UV := uv run --project $(PROJECT_ROOT)
 
+ifneq ($(EMBEDDER),)
+export TOOL_SELECTOR_EMBEDDING := $(EMBEDDER)
+UV := uv run --project $(PROJECT_ROOT) \
+      $(if $(filter anthropic,$(EMBEDDER)),--with anthropic,\
+      $(if $(filter all-minilm-l6-v2,$(EMBEDDER)),--with sentence-transformers,))
+endif
+
 .DEFAULT_GOAL := help
 
 .PHONY: help check list search run claude env
