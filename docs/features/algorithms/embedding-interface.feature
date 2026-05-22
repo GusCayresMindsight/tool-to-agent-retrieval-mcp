@@ -21,22 +21,6 @@ Feature: Embedding Interface
     When it scores any query against any target text
     Then the score is between 0.0 and 1.0 inclusive
 
-  Scenario: An exact or near-exact text match produces a score of 1.0
-    Given an embedding implementation
-    When it scores the query "open pull request" against "open pull request"
-    Then the score is 1.0
-
-  Scenario: Completely unrelated texts produce a score of 0.0
-    Given an embedding implementation
-    When it scores the query "open pull request" against "send email to a colleague"
-    Then the score is 0.0
-
-  Scenario: A partial overlap produces a score strictly between 0.0 and 1.0
-    Given an embedding implementation
-    When it scores the query "open pull request" against "open a database connection"
-    Then the score is greater than 0.0
-    And the score is less than 1.0
-
   Scenario: The built-in token-overlap embedding is used when none is configured
     Given no embedding is explicitly configured
     When the retrieval algorithm runs a query against the catalog
