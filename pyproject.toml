@@ -16,6 +16,7 @@ dependencies = ["mcp>=1.0"]
 dev = [
     "pytest>=8",
     "pytest-bdd>=7",
+    "pytest-cov>=6",
     "ruff>=0.15.14",
 ]
 
@@ -28,6 +29,18 @@ packages = ["src/tool_selector_mcp"]
 [tool.pytest.ini_options]
 testpaths = ["tests/pytest"]
 bdd_features_base_dir = "docs/features"
+
+[tool.coverage.run]
+source = ["src/tool_selector_mcp"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
 
 [tool.ruff]
 line-length = 100

@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .corpus import CorpusError, load_corpus, resolve_corpus_path
 from .embeddings import UnknownEmbeddingError, build_embedding
-from .server import ToolSelectorServer, UnknownToolError
+from .server import ToolSelectorServer, UnknownToolError, make_subprocess_launcher
 
 DEFAULT_EMBEDDING = "token-overlap"
 EMBEDDING_ENV_VAR = "TOOL_SELECTOR_EMBEDDING"
@@ -26,7 +26,7 @@ def build_server() -> ToolSelectorServer:
     corpus = load_corpus(path)
     name = os.environ.get(EMBEDDING_ENV_VAR, DEFAULT_EMBEDDING)
     embedding = build_embedding(name)
-    return ToolSelectorServer(corpus, embedding=embedding)
+    return ToolSelectorServer(corpus, launcher=make_subprocess_launcher(), embedding=embedding)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,14 +51,15 @@ def main(argv: list[str] | None = None) -> int:
             return [{"error": str(exc)}]
 
     @app.tool()
-    def invoke_tool(
+    async def invoke_tool(
         tool: str,
         arguments: dict | None = None,
         server: str | None = None,
     ) -> dict:
         """Invoke a tool on its owning downstream agent."""
         try:
-            return {"result": ts.invoke_tool(tool, arguments, server=server)}
+            result = await ts.invoke_tool_async(tool, arguments, server=server)
+            return {"result": result}
         except (UnknownToolError, RuntimeError) as exc:
             return {"error": str(exc)}
 

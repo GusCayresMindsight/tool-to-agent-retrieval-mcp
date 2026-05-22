@@ -93,7 +93,8 @@ class AnthropicEmbedding:
                 }
             ],
         )
-        raw = message.content[0].text.strip()
+        # Extract the leading numeric value; the model sometimes adds explanation after it.
+        raw = message.content[0].text.strip().split()[0].rstrip(".,;:")
         return min(1.0, max(0.0, float(raw)))
 
 

@@ -13,7 +13,7 @@ core can be exercised in tests without spawning subprocesses.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -62,6 +62,7 @@ class LaunchCall:
 
 
 Launcher = Callable[[Agent, str, Mapping[str, Any]], Any]
+AsyncLauncher = Callable[[Agent, str, Mapping[str, Any]], Awaitable[Any]]
 
 
 def _parse_tool_id(corpus: Corpus, tool_id: str) -> tuple[Agent, Tool]:
@@ -166,6 +167,81 @@ class ToolSelectorServer:
         if self._launcher is None:
             raise RuntimeError("no launcher configured; cannot spawn downstream agent")
         return self._launcher(agent, target_tool.name, arguments)
+
+    async def invoke_tool_async(
+        self,
+        tool: str,
+        arguments: Mapping[str, Any] | None = None,
+        *,
+        server: str | None = None,
+    ) -> Any:
+        """Async variant of ``invoke_tool`` — awaits an ``AsyncLauncher``."""
+        arguments = arguments or {}
+        if server is not None:
+            agent = self.corpus.get_agent(server)
+            if agent is None:
+                raise UnknownToolError(f"{server}.{tool}")
+            target_tool = next((t for t in agent.tools if t.name == tool), None)
+            if target_tool is None:
+                raise UnknownToolError(f"{server}.{tool}")
+        else:
+            found = self.corpus.find_tool(tool)
+            if found is None:
+                raise UnknownToolError(tool)
+            agent, target_tool = found
+
+        if self._launcher is None:
+            raise RuntimeError("no launcher configured; cannot spawn downstream agent")
+        return await self._launcher(agent, target_tool.name, arguments)
+
+
+def make_subprocess_launcher() -> AsyncLauncher:
+    """Return an async launcher that spawns each downstream agent as a subprocess.
+
+    The agent's ``command`` / ``args`` / ``env`` from the corpus are used to start
+    the MCP stdio server.  Credentials (GITHUB_TOKEN, etc.) are inherited from the
+    parent process environment and do not need to be in the corpus.
+    """
+
+    async def launcher(agent: Agent, tool_name: str, arguments: Mapping[str, Any]) -> Any:
+        from mcp import ClientSession, StdioServerParameters
+        from mcp.client.stdio import stdio_client
+
+        params = StdioServerParameters(
+            command=agent.command,
+            args=list(agent.args),
+            env=dict(agent.env) if agent.env else None,
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                return await session.call_tool(tool_name, dict(arguments))
+
+    return launcher
+
+
+def make_recording_async_launcher() -> tuple[list[LaunchCall], AsyncLauncher]:
+    """Return a (calls, async-launcher) pair that records every async invocation."""
+    calls: list[LaunchCall] = []
+
+    async def launcher(agent: Agent, tool_name: str, arguments: Mapping[str, Any]) -> Any:
+        call = LaunchCall(
+            agent_id=agent.agent_id,
+            command=agent.command,
+            args=tuple(agent.args),
+            env=dict(agent.env),
+            tool_name=tool_name,
+            arguments=dict(arguments),
+        )
+        calls.append(call)
+        return {
+            "agent_id": agent.agent_id,
+            "tool": tool_name,
+            "arguments": dict(arguments),
+            "ok": True,
+        }
+
+    return calls, launcher
 
 
 def make_recording_launcher() -> tuple[list[LaunchCall], Launcher]:

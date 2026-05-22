@@ -1,127 +1,170 @@
 {
   "mcpServers": {
-    "github": {
+    "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "description": "Manages GitHub repositories, issues, pull requests, and code search.",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "description": "Read, write, navigate, and search the local file system within sandboxed directories.",
       "tools": [
         {
-          "name": "create_issue",
-          "description": "Create a new issue in a GitHub repository.",
+          "name": "read_text_file",
+          "description": "Read the complete contents of a file from the file system as text. Handles various text encodings and provides detailed error messages if the file cannot be read.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "owner": { "type": "string", "description": "Repository owner (user or org)" },
-              "repo":  { "type": "string", "description": "Repository name" },
-              "title": { "type": "string", "description": "Issue title" },
-              "body":  { "type": "string", "description": "Issue body / description" },
-              "labels": {
+              "path": { "type": "string" },
+              "tail": { "type": "number", "description": "If provided, returns only the last N lines of the file" },
+              "head": { "type": "number", "description": "If provided, returns only the first N lines of the file" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "read_media_file",
+          "description": "Read an image or audio file. Returns the base64 encoded data and MIME type. Only works within allowed directories.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "read_multiple_files",
+          "description": "Read the contents of multiple files simultaneously. More efficient than reading files one by one when analyzing or comparing multiple files.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "paths": {
                 "type": "array",
                 "items": { "type": "string" },
-                "description": "Labels to apply to the issue"
+                "minItems": 1,
+                "description": "Array of file paths to read within allowed directories"
               }
             },
-            "required": ["owner", "repo", "title"]
+            "required": ["paths"]
           }
         },
         {
-          "name": "list_pull_requests",
-          "description": "List pull requests in a GitHub repository, optionally filtered by state.",
+          "name": "write_file",
+          "description": "Create a new file or completely overwrite an existing file with new content. Use with caution as it will overwrite existing files without warning.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "owner": { "type": "string" },
-              "repo":  { "type": "string" },
-              "state": {
-                "type": "string",
-                "enum": ["open", "closed", "all"],
-                "default": "open"
-              }
+              "path": { "type": "string" },
+              "content": { "type": "string" }
             },
-            "required": ["owner", "repo"]
+            "required": ["path", "content"]
           }
         },
         {
-          "name": "search_code",
-          "description": "Search for code across GitHub repositories using GitHub search syntax.",
+          "name": "edit_file",
+          "description": "Make line-based edits to a text file. Each edit replaces exact line sequences with new content. Returns a git-style diff showing the changes made.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "query":    { "type": "string", "description": "GitHub code search query" },
-              "language": { "type": "string", "description": "Filter results by programming language" }
+              "path": { "type": "string" },
+              "edits": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "oldText": { "type": "string", "description": "Text to search for — must match exactly" },
+                    "newText": { "type": "string", "description": "Text to replace with" }
+                  },
+                  "required": ["oldText", "newText"]
+                }
+              },
+              "dryRun": { "type": "boolean", "default": false, "description": "Preview changes using git-style diff format" }
             },
-            "required": ["query"]
-          }
-        }
-      ]
-    },
-    "postgres": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"],
-      "description": "Query and explore a PostgreSQL database with read-only SQL access.",
-      "tools": [
-        {
-          "name": "query",
-          "description": "Execute a read-only SQL SELECT query and return the result rows.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {
-              "sql": { "type": "string", "description": "SQL SELECT statement to execute" }
-            },
-            "required": ["sql"]
+            "required": ["path", "edits"]
           }
         },
         {
-          "name": "list_tables",
-          "description": "List all tables in the connected PostgreSQL database.",
+          "name": "create_directory",
+          "description": "Create a new directory or ensure a directory exists. Can create multiple nested directories in one operation.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "schema": {
-                "type": "string",
-                "description": "Schema name to inspect (default: public)"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "slack": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-slack"],
-      "description": "Send messages, read channel history, and browse channels in a Slack workspace.",
-      "tools": [
-        {
-          "name": "post_message",
-          "description": "Post a message to a Slack channel or direct message thread.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {
-              "channel_id": { "type": "string", "description": "Channel ID or user ID (for DMs)" },
-              "text":       { "type": "string", "description": "Message text (supports Slack mrkdwn)" }
+              "path": { "type": "string" }
             },
-            "required": ["channel_id", "text"]
+            "required": ["path"]
           }
         },
         {
-          "name": "get_channel_history",
-          "description": "Retrieve recent messages from a Slack channel.",
+          "name": "list_directory",
+          "description": "Get a detailed listing of all files and directories in a specified path. Results distinguish between files and directories with [FILE] and [DIR] prefixes.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "channel_id": { "type": "string" },
-              "limit": {
-                "type": "integer",
-                "description": "Number of messages to retrieve",
-                "default": 10
-              }
+              "path": { "type": "string" }
             },
-            "required": ["channel_id"]
+            "required": ["path"]
           }
         },
         {
-          "name": "list_channels",
-          "description": "List all public channels in the Slack workspace.",
+          "name": "list_directory_with_sizes",
+          "description": "Get a detailed listing of all files and directories in a specified path, including sizes. Results distinguish between files and directories.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "sortBy": { "type": "string", "enum": ["name", "size"], "default": "name", "description": "Sort entries by name or size" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "directory_tree",
+          "description": "Get a recursive tree view of files and directories as a JSON structure. Each entry includes name, type (file/directory), and children for directories.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "excludePatterns": { "type": "array", "items": { "type": "string" }, "default": [] }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "move_file",
+          "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "source": { "type": "string" },
+              "destination": { "type": "string" }
+            },
+            "required": ["source", "destination"]
+          }
+        },
+        {
+          "name": "search_files",
+          "description": "Recursively search for files and directories matching a pattern. Uses glob-style patterns and returns full paths to all matching items.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "pattern": { "type": "string" },
+              "excludePatterns": { "type": "array", "items": { "type": "string" }, "default": [] }
+            },
+            "required": ["path", "pattern"]
+          }
+        },
+        {
+          "name": "get_file_info",
+          "description": "Retrieve detailed metadata about a file or directory. Returns information including size, creation time, last modified time, permissions, and type.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" }
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "list_allowed_directories",
+          "description": "Returns the list of directories that this server is allowed to access. Subdirectories within these allowed directories are also accessible.",
           "inputSchema": {
             "type": "object",
             "properties": {}
@@ -129,56 +172,625 @@
         }
       ]
     },
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
-      "description": "Read, write, and search files within a sandboxed directory.",
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "description": "Fetch web pages from the internet and convert their content to markdown for LLM consumption.",
       "tools": [
         {
-          "name": "read_file",
-          "description": "Read the full contents of a file.",
+          "name": "fetch",
+          "description": "Fetches a URL from the internet and optionally extracts its contents as markdown. Grants internet access to retrieve up-to-date information.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "path": { "type": "string", "description": "Absolute path to the file" }
+              "url": { "type": "string", "description": "URL to fetch", "format": "uri" },
+              "max_length": {
+                "type": "integer",
+                "description": "Maximum number of characters to return",
+                "default": 5000,
+                "minimum": 1,
+                "maximum": 999999
+              },
+              "start_index": {
+                "type": "integer",
+                "description": "Character index to start output from for pagination",
+                "default": 0,
+                "minimum": 0
+              },
+              "raw": {
+                "type": "boolean",
+                "description": "Return raw HTML without simplification to markdown",
+                "default": false
+              }
             },
-            "required": ["path"]
+            "required": ["url"]
+          }
+        }
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persist and query a knowledge graph of entities, relations, and observations across sessions.",
+      "tools": [
+        {
+          "name": "create_entities",
+          "description": "Create multiple new entities in the knowledge graph.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "entities": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string", "description": "The name of the entity" },
+                    "entityType": { "type": "string", "description": "The type of the entity" },
+                    "observations": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "An array of observation contents associated with the entity"
+                    }
+                  },
+                  "required": ["name", "entityType", "observations"]
+                }
+              }
+            },
+            "required": ["entities"]
           }
         },
         {
-          "name": "write_file",
-          "description": "Write content to a file, creating it if it does not exist.",
+          "name": "create_relations",
+          "description": "Create multiple new relations between entities in the knowledge graph. Relations should be in active voice.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "path":    { "type": "string" },
-              "content": { "type": "string" }
+              "relations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": { "type": "string", "description": "The name of the entity where the relation starts" },
+                    "to": { "type": "string", "description": "The name of the entity where the relation ends" },
+                    "relationType": { "type": "string", "description": "The type of the relation" }
+                  },
+                  "required": ["from", "to", "relationType"]
+                }
+              }
             },
-            "required": ["path", "content"]
+            "required": ["relations"]
           }
         },
         {
-          "name": "list_directory",
-          "description": "List files and subdirectories inside a directory.",
+          "name": "add_observations",
+          "description": "Add new observations to existing entities in the knowledge graph.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "path": { "type": "string", "description": "Directory path to list" }
+              "observations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "entityName": { "type": "string", "description": "The name of the entity to add the observations to" },
+                    "contents": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "An array of observation contents to add"
+                    }
+                  },
+                  "required": ["entityName", "contents"]
+                }
+              }
             },
-            "required": ["path"]
+            "required": ["observations"]
           }
         },
         {
-          "name": "search_files",
-          "description": "Search for files matching a glob pattern or containing a text string.",
+          "name": "delete_entities",
+          "description": "Delete multiple entities and their associated relations from the knowledge graph.",
           "inputSchema": {
             "type": "object",
             "properties": {
-              "path":    { "type": "string", "description": "Root directory to search from" },
-              "pattern": { "type": "string", "description": "Glob pattern or substring to match" }
+              "entityNames": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "An array of entity names to delete"
+              }
             },
-            "required": ["path", "pattern"]
+            "required": ["entityNames"]
           }
+        },
+        {
+          "name": "delete_observations",
+          "description": "Delete specific observations from entities in the knowledge graph.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "deletions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "entityName": { "type": "string", "description": "The name of the entity containing the observations" },
+                    "observations": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "An array of observations to delete"
+                    }
+                  },
+                  "required": ["entityName", "observations"]
+                }
+              }
+            },
+            "required": ["deletions"]
+          }
+        },
+        {
+          "name": "delete_relations",
+          "description": "Delete multiple relations from the knowledge graph.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "relations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": { "type": "string" },
+                    "to": { "type": "string" },
+                    "relationType": { "type": "string" }
+                  },
+                  "required": ["from", "to", "relationType"]
+                },
+                "description": "An array of relations to delete"
+              }
+            },
+            "required": ["relations"]
+          }
+        },
+        {
+          "name": "read_graph",
+          "description": "Read the entire knowledge graph.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "search_nodes",
+          "description": "Search for nodes in the knowledge graph based on a query.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "The search query to match against entity names, types, and observation content"
+              }
+            },
+            "required": ["query"]
+          }
+        },
+        {
+          "name": "open_nodes",
+          "description": "Open specific nodes in the knowledge graph by their names.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "names": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "An array of entity names to retrieve"
+              }
+            },
+            "required": ["names"]
+          }
+        }
+      ]
+    },
+    "sequentialthinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequentialthinking"],
+      "description": "Reason through complex problems step-by-step with branching and revision capabilities.",
+      "tools": [
+        {
+          "name": "sequentialthinking",
+          "description": "A detailed tool for dynamic and reflective problem-solving through thoughts. This tool helps analyze problems through a flexible thinking process that can adapt and evolve. Each thought can build on, question, or revise previous insights as understanding deepens.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "thought": { "type": "string", "description": "Your current thinking step" },
+              "nextThoughtNeeded": { "type": "boolean", "description": "Whether another thought step is needed" },
+              "thoughtNumber": { "type": "number", "description": "Current thought number" },
+              "totalThoughts": { "type": "number", "description": "Estimated total thoughts needed" },
+              "isRevision": { "type": "boolean", "description": "Whether this revises previous thinking" },
+              "revisesThought": { "type": "number", "description": "Which thought is being reconsidered" },
+              "branchFromThought": { "type": "number", "description": "Branching point thought number" },
+              "branchId": { "type": "string", "description": "Branch identifier" },
+              "needsMoreThoughts": { "type": "boolean", "description": "If more thoughts are needed" }
+            },
+            "required": ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"]
+          }
+        }
+      ]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git"],
+      "description": "Inspect and manipulate local Git repositories: status, diffs, commits, branches, and logs.",
+      "tools": [
+        {
+          "name": "git_status",
+          "description": "Shows the working tree status.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" }
+            },
+            "required": ["repo_path"]
+          }
+        },
+        {
+          "name": "git_diff_unstaged",
+          "description": "Shows changes in the working directory that are not yet staged.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "context_lines": { "type": "integer", "default": 3 }
+            },
+            "required": ["repo_path"]
+          }
+        },
+        {
+          "name": "git_diff_staged",
+          "description": "Shows changes that are staged for commit.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "context_lines": { "type": "integer", "default": 3 }
+            },
+            "required": ["repo_path"]
+          }
+        },
+        {
+          "name": "git_diff",
+          "description": "Shows differences between branches or commits.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "target": { "type": "string" },
+              "context_lines": { "type": "integer", "default": 3 }
+            },
+            "required": ["repo_path", "target"]
+          }
+        },
+        {
+          "name": "git_commit",
+          "description": "Records changes to the repository.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "message": { "type": "string" }
+            },
+            "required": ["repo_path", "message"]
+          }
+        },
+        {
+          "name": "git_add",
+          "description": "Adds file contents to the staging area.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "files": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "required": ["repo_path", "files"]
+          }
+        },
+        {
+          "name": "git_reset",
+          "description": "Unstages all staged changes.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" }
+            },
+            "required": ["repo_path"]
+          }
+        },
+        {
+          "name": "git_log",
+          "description": "Shows the commit logs.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "max_count": { "type": "integer", "default": 10 },
+              "start_timestamp": { "type": "string", "description": "ISO 8601, relative dates, or absolute dates" },
+              "end_timestamp": { "type": "string", "description": "ISO 8601, relative dates, or absolute dates" }
+            },
+            "required": ["repo_path"]
+          }
+        },
+        {
+          "name": "git_create_branch",
+          "description": "Creates a new branch from an optional base branch.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "branch_name": { "type": "string" },
+              "base_branch": { "type": ["string", "null"] }
+            },
+            "required": ["repo_path", "branch_name"]
+          }
+        },
+        {
+          "name": "git_checkout",
+          "description": "Switches branches.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "branch_name": { "type": "string" }
+            },
+            "required": ["repo_path", "branch_name"]
+          }
+        },
+        {
+          "name": "git_show",
+          "description": "Shows the contents of a commit.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string" },
+              "revision": { "type": "string" }
+            },
+            "required": ["repo_path", "revision"]
+          }
+        },
+        {
+          "name": "git_branch",
+          "description": "List Git branches.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "repo_path": { "type": "string", "description": "The path to the Git repository" },
+              "branch_type": { "type": "string", "description": "local, remote, or all branches" },
+              "contains": { "type": ["string", "null"], "description": "Commit SHA that branch should contain" },
+              "not_contains": { "type": ["string", "null"], "description": "Commit SHA that branch should NOT contain" }
+            },
+            "required": ["repo_path", "branch_type"]
+          }
+        }
+      ]
+    },
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time"],
+      "description": "Get the current time and convert times between IANA timezones.",
+      "tools": [
+        {
+          "name": "get_current_time",
+          "description": "Get current time in a specific timezone.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "timezone": { "type": "string", "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London')" }
+            },
+            "required": ["timezone"]
+          }
+        },
+        {
+          "name": "convert_time",
+          "description": "Convert time between timezones.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "source_timezone": { "type": "string", "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London')" },
+              "time": { "type": "string", "description": "Time to convert in 24-hour format (HH:MM)" },
+              "target_timezone": { "type": "string", "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco')" }
+            },
+            "required": ["source_timezone", "time", "target_timezone"]
+          }
+        }
+      ]
+    },
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      "description": "Reference server demonstrating MCP protocol features: echo, math, sampling, elicitation, long-running operations, resources, and structured content.",
+      "tools": [
+        {
+          "name": "echo",
+          "description": "Echoes back the input string.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "message": { "type": "string", "description": "Message to echo" }
+            },
+            "required": ["message"]
+          }
+        },
+        {
+          "name": "get-sum",
+          "description": "Returns the sum of two numbers.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "a": { "type": "number", "description": "First number" },
+              "b": { "type": "number", "description": "Second number" }
+            },
+            "required": ["a", "b"]
+          }
+        },
+        {
+          "name": "get-env",
+          "description": "Returns all environment variables, helpful for debugging MCP server configuration.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "get-tiny-image",
+          "description": "Returns a tiny MCP logo image.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "get-annotated-message",
+          "description": "Demonstrates how annotations can be used to provide metadata about content.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "messageType": {
+                "type": "string",
+                "enum": ["error", "success", "debug"],
+                "description": "Type of message to demonstrate different annotation patterns"
+              },
+              "includeImage": { "type": "boolean", "default": false, "description": "Whether to include an example image" }
+            }
+          }
+        },
+        {
+          "name": "get-structured-content",
+          "description": "Returns structured content along with an output schema for client data validation.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "enum": ["New York", "Chicago", "Los Angeles"],
+                "description": "Choose city"
+              }
+            }
+          }
+        },
+        {
+          "name": "get-resource-links",
+          "description": "Returns up to ten resource links that reference different types of resources.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 10,
+                "default": 3,
+                "description": "Number of resource links to return (1–10)"
+              }
+            }
+          }
+        },
+        {
+          "name": "get-resource-reference",
+          "description": "Returns a resource reference that can be used by MCP clients.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "resourceType": {
+                "type": "string",
+                "enum": ["text", "blob"],
+                "default": "text",
+                "description": "Type of resource (text or blob)"
+              },
+              "resourceId": { "type": "number", "default": 1, "description": "ID of the text resource to fetch" }
+            }
+          }
+        },
+        {
+          "name": "get-roots-list",
+          "description": "Lists the current MCP roots provided by the client. Demonstrates the roots protocol capability.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "gzip-file-as-resource",
+          "description": "Compresses a single file using gzip compression and returns it either as a resource or a resource link.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Name of the output file", "default": "README.md.gz" },
+              "data": { "type": "string", "description": "URL or data URI of the file content to compress" },
+              "outputType": {
+                "type": "string",
+                "enum": ["resourceLink", "resource"],
+                "default": "resourceLink",
+                "description": "How the resulting gzipped file should be returned"
+              }
+            }
+          }
+        },
+        {
+          "name": "simulate-research-query",
+          "description": "Simulates a deep research operation that gathers, analyzes, and synthesizes information. Demonstrates MCP task-based operations with progress through multiple stages.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "topic": { "type": "string", "description": "The research topic to investigate" },
+              "ambiguous": {
+                "type": "boolean",
+                "default": false,
+                "description": "Simulate an ambiguous query that requires clarification"
+              }
+            },
+            "required": ["topic"]
+          }
+        },
+        {
+          "name": "trigger-long-running-operation",
+          "description": "Demonstrates a long running operation with progress updates.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "duration": { "type": "number", "default": 10, "description": "Duration of the operation in seconds" },
+              "steps": { "type": "number", "default": 5, "description": "Number of steps in the operation" }
+            }
+          }
+        },
+        {
+          "name": "trigger-sampling-request",
+          "description": "Trigger a request from the server for LLM sampling.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "prompt": { "type": "string", "description": "The prompt to send to the LLM" },
+              "maxTokens": { "type": "number", "default": 100, "description": "Maximum number of tokens to generate" }
+            },
+            "required": ["prompt"]
+          }
+        },
+        {
+          "name": "trigger-sampling-request-async",
+          "description": "Trigger an async sampling request that the client executes as a background task. Demonstrates bidirectional MCP tasks where the server sends a request and the client executes it asynchronously.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "prompt": { "type": "string", "description": "The prompt to send to the LLM" },
+              "maxTokens": { "type": "number", "default": 100, "description": "Maximum number of tokens to generate" }
+            },
+            "required": ["prompt"]
+          }
+        },
+        {
+          "name": "trigger-elicitation-request",
+          "description": "Trigger a request from the server for user elicitation.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "trigger-elicitation-request-async",
+          "description": "Trigger an async elicitation request that the client executes as a background task. Demonstrates bidirectional MCP tasks where the server sends an elicitation request and the client handles user input asynchronously.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "toggle-simulated-logging",
+          "description": "Toggles simulated, random-leveled logging on or off.",
+          "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+          "name": "toggle-subscriber-updates",
+          "description": "Toggles simulated resource subscription updates on or off.",
+          "inputSchema": { "type": "object", "properties": {} }
         }
       ]
     }

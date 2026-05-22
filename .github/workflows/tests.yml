@@ -36,4 +36,20 @@ jobs:
         run: uv sync --extra dev --python ${{ matrix.python-version }}
 
       - name: Run pytest
-        run: uv run --extra dev --python ${{ matrix.python-version }} pytest tests/pytest -v
+        run: |
+          if [ "${{ matrix.python-version }}" = "3.13" ]; then
+            uv run --extra dev --python ${{ matrix.python-version }} \
+              pytest tests/pytest -v \
+              --cov=tool_selector_mcp \
+              --cov-report=term-missing \
+              --cov-report=xml:coverage.xml
+          else
+            uv run --extra dev --python ${{ matrix.python-version }} pytest tests/pytest -v
+          fi
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml

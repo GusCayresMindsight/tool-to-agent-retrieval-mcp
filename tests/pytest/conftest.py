@@ -28,6 +28,7 @@ pytest_plugins = [
     "steps.scripted_embedding_steps",
     "steps.anthropic_embedding_steps",
     "steps.minilm_embedding_steps",
+    "steps.subprocess_launcher_steps",
 ]
 
 
