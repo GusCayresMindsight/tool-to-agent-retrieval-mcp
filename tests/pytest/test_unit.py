@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tool_selector_mcp.corpus import Agent, Corpus, Tool
+from tool_selector_mcp.corpus import Agent, Corpus, Tool, load_corpus
 from tool_selector_mcp.embeddings import ScriptedEmbedding
 from tool_selector_mcp.retrieval import _score, search, search_with_info
 from tool_selector_mcp.server import (
@@ -44,6 +46,21 @@ def _corpus() -> Corpus:
             )
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# corpus – load_corpus with explicit host_env (corpus.py branch 110->112)
+# ---------------------------------------------------------------------------
+
+
+def test_load_corpus_with_explicit_host_env(tmp_path: Path) -> None:
+    # Exercises the host_env-is-not-None branch (line 110 → 112, skipping 111).
+    corpus_file = tmp_path / "corpus.json"
+    corpus_file.write_text(
+        json.dumps({"mcpServers": {"my-agent": {"command": "echo", "description": "test"}}})
+    )
+    corpus = load_corpus(corpus_file, host_env={})
+    assert "my-agent" in corpus.agents
 
 
 # ---------------------------------------------------------------------------
