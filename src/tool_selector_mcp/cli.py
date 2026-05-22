@@ -3,25 +3,36 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 import sys
 
 from mcp.server.fastmcp import FastMCP
 
 from .corpus import CorpusError, load_corpus, resolve_corpus_path
+from .embeddings import UnknownEmbeddingError, build_embedding
 from .server import ToolSelectorServer, UnknownToolError
+
+DEFAULT_EMBEDDING = "token-overlap"
+EMBEDDING_ENV_VAR = "TOOL_SELECTOR_EMBEDDING"
 
 
 def build_server() -> ToolSelectorServer:
-    """Load the corpus and return a configured ``ToolSelectorServer``."""
+    """Load the corpus and return a configured ``ToolSelectorServer``.
+
+    The active embedding is selected via the ``TOOL_SELECTOR_EMBEDDING``
+    environment variable; absence falls back to the token-overlap embedding.
+    """
     path = resolve_corpus_path()
     corpus = load_corpus(path)
-    return ToolSelectorServer(corpus)
+    name = os.environ.get(EMBEDDING_ENV_VAR, DEFAULT_EMBEDDING)
+    embedding = build_embedding(name)
+    return ToolSelectorServer(corpus, embedding=embedding)
 
 
 def main(argv: list[str] | None = None) -> int:
     try:
         ts = build_server()
-    except CorpusError as exc:
+    except (CorpusError, UnknownEmbeddingError) as exc:
         print(f"tool-selector-mcp: {exc}", file=sys.stderr)
         return 1
     app = FastMCP("tool-selector-mcp")

@@ -9,6 +9,14 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 
+class UnknownEmbeddingError(Exception):
+    """Raised when ``TOOL_SELECTOR_EMBEDDING`` names an unrecognized embedding."""
+
+    def __init__(self, name: str):
+        super().__init__(f"unknown embedding: {name}")
+        self.name = name
+
+
 @runtime_checkable
 class Embedding(Protocol):
     def __call__(self, query: str, text: str) -> float: ...
@@ -59,13 +67,19 @@ class AnthropicEmbedding:
     Requires an ``ANTHROPIC_API_KEY`` environment variable (or explicit key).
     """
 
-    def __init__(self, api_key: str | None = None) -> None:
-        import anthropic
+    def __init__(self, api_key: str | None = None, *, client=None) -> None:
+        self._api_key = api_key
+        self._client = client  # None → created lazily on first call
 
-        self._client = anthropic.Anthropic(api_key=api_key)
+    def _get_client(self):
+        if self._client is None:
+            import anthropic
+
+            self._client = anthropic.Anthropic(api_key=self._api_key)
+        return self._client
 
     def __call__(self, query: str, text: str) -> float:
-        message = self._client.messages.create(
+        message = self._get_client().messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=16,
             messages=[
@@ -107,3 +121,22 @@ class AllMiniLML6V2Embedding:
         vecs = model.encode([query, text], normalize_embeddings=True)
         sim = float(np.dot(vecs[0], vecs[1]))
         return min(1.0, max(0.0, (sim + 1.0) / 2.0))
+
+
+_EMBEDDINGS: dict[str, type] = {
+    "token-overlap": TokenOverlapEmbedding,
+    "anthropic": AnthropicEmbedding,
+    "all-minilm-l6-v2": AllMiniLML6V2Embedding,
+}
+
+
+def build_embedding(name: str) -> Embedding:
+    """Return an embedding instance for the given kebab-case ``name``.
+
+    Recognized names: ``token-overlap``, ``anthropic``, ``all-minilm-l6-v2``.
+    Raises :class:`UnknownEmbeddingError` for any other value.
+    """
+    cls = _EMBEDDINGS.get(name)
+    if cls is None:
+        raise UnknownEmbeddingError(name)
+    return cls()

@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .corpus import Agent, Corpus, Tool
+from .embeddings import Embedding
 from .retrieval import search
 
 
@@ -88,10 +89,12 @@ class ToolSelectorServer:
         launcher: Launcher | None = None,
         *,
         rewrite_queries: bool = True,
+        embedding: Embedding | None = None,
     ) -> None:
         self.corpus = corpus
         self._launcher = launcher
         self.rewrite_queries = rewrite_queries
+        self.embedding = embedding
 
     # --- exposed MCP tools -------------------------------------------------
 
@@ -101,6 +104,7 @@ class ToolSelectorServer:
             query,
             k=k,
             rewrite=self.rewrite_queries,
+            embedding=self.embedding,
         )
         hits: list[SearchHit] = []
         for r in results:

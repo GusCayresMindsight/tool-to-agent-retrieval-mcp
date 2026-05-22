@@ -25,3 +25,32 @@ Feature: Embedding Interface
     Given no embedding is explicitly configured
     When the retrieval algorithm runs a query against the catalog
     Then similarity is computed using the token-overlap embedding
+
+  # Selecting an embedding at server startup
+  # ----------------------------------------
+  # The MCP server picks one Embedding implementation at startup and uses it
+  # for all subsequent retrieval calls. Selection is driven by the
+  # TOOL_SELECTOR_EMBEDDING environment variable; absence falls back to the
+  # built-in token-overlap embedding. The scripted embedding is test-only and
+  # not selectable via this variable, since it requires an explicit score table.
+
+  Scenario Outline: TOOL_SELECTOR_EMBEDDING selects the active embedding at startup
+    Given the environment variable TOOL_SELECTOR_EMBEDDING is set to "<value>"
+    When the server starts
+    Then retrieval uses the <name> embedding
+
+    Examples:
+      | value            | name             |
+      | token-overlap    | token-overlap    |
+      | anthropic        | Anthropic        |
+      | all-minilm-l6-v2 | All-MiniLM-L6-v2 |
+
+  Scenario: TOOL_SELECTOR_EMBEDDING unset falls back to token-overlap
+    Given the environment variable TOOL_SELECTOR_EMBEDDING is not set
+    When the server starts
+    Then retrieval uses the token-overlap embedding
+
+  Scenario: Unknown TOOL_SELECTOR_EMBEDDING value fails server startup
+    Given the environment variable TOOL_SELECTOR_EMBEDDING is set to "not-a-real-embedding"
+    When the server starts
+    Then the server exits with an error indicating the embedding name is unknown

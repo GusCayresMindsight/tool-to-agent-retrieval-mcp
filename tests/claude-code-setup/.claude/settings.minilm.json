@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "tool-selector": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "/home/gustavo-silva/GitHub/tool-selector-mcp",
+        "--with",
+        "sentence-transformers",
+        "tool-selector-mcp"
+      ],
+      "env": {
+        "MCP_CORPUS_PATH": "/home/gustavo-silva/GitHub/tool-selector-mcp/tests/claude-code-setup/.mcp-corpus.json",
+        "TOOL_SELECTOR_EMBEDDING": "all-minilm-l6-v2"
+      }
+    }
+  }
+}
