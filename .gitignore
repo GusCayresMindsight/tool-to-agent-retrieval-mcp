@@ -2,3 +2,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.claude/settings.local.json
+
