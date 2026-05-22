@@ -68,15 +68,18 @@ class AnthropicEmbedding:
     """
 
     def __init__(self, api_key: str | None = None, *, client=None) -> None:
-        if client is not None:
-            self._client = client
-        else:
+        self._api_key = api_key
+        self._client = client  # None → created lazily on first call
+
+    def _get_client(self):
+        if self._client is None:
             import anthropic
 
-            self._client = anthropic.Anthropic(api_key=api_key)
+            self._client = anthropic.Anthropic(api_key=self._api_key)
+        return self._client
 
     def __call__(self, query: str, text: str) -> float:
-        message = self._client.messages.create(
+        message = self._get_client().messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=16,
             messages=[

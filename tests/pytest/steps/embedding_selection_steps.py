@@ -14,10 +14,7 @@ The shared "When the server starts" step is registered in
 from __future__ import annotations
 
 import json
-import sys
-import types
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 from pytest_bdd import given, parsers, then
@@ -41,17 +38,6 @@ def _ensure_minimal_corpus(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.chdir(tmp_path)
 
 
-def _stub_anthropic(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Install a fake ``anthropic`` module so AnthropicEmbedding can instantiate
-    without the SDK being installed or an API key being set.
-    """
-    if "anthropic" in sys.modules:
-        return
-    fake = types.ModuleType("anthropic")
-    fake.Anthropic = MagicMock(return_value=MagicMock())
-    monkeypatch.setitem(sys.modules, "anthropic", fake)
-
-
 # --- Given --------------------------------------------------------------
 
 
@@ -62,8 +48,6 @@ def _set_emb_env(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setenv("TOOL_SELECTOR_EMBEDDING", value)
-    if value == "anthropic":
-        _stub_anthropic(monkeypatch)
     _ensure_minimal_corpus(tmp_path, monkeypatch)
 
 
