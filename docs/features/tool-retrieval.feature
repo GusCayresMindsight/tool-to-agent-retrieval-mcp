@@ -1,4 +1,4 @@
-Feature: Tool-to-Agent Retrieval Algorithm
+Feature: Tool-to-Agent Retrieval
   The tool-selector-mcp uses a unified Tool-to-Agent Retrieval algorithm based on
   "Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems"
   (Lumer et al., PricewaterhouseCoopers, arXiv:2511.01854v2, Nov 2025).

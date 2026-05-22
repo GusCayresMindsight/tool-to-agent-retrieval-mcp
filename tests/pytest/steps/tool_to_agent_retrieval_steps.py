@@ -1,4 +1,4 @@
-"""Step definitions for docs/features/tool-to-agent-retrieval-algorithm.feature."""
+"""Step definitions for docs/features/tool-retrieval.feature."""
 
 from __future__ import annotations
 
