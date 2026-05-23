@@ -21,7 +21,6 @@ from tool_selector_mcp.server import (
     make_recording_launcher,
 )
 
-
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
@@ -259,9 +258,7 @@ def test_main_returns_1_on_unknown_embedding_error():
     from tool_selector_mcp.cli import main
     from tool_selector_mcp.embeddings import UnknownEmbeddingError
 
-    with patch(
-        "tool_selector_mcp.cli.build_server", side_effect=UnknownEmbeddingError("bad-emb")
-    ):
+    with patch("tool_selector_mcp.cli.build_server", side_effect=UnknownEmbeddingError("bad-emb")):
         assert main() == 1
 
 
