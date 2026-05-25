@@ -4,13 +4,31 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tool-selector-mcp"
-version = "0.0.1"
+version = "0.1.0"
 description = "MCP server that selects the best-suited downstream agent for a natural language query, distributed via uvx."
+readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 authors = [{ name = "Gustavo Cayres" }]
+keywords = ["mcp", "model-context-protocol", "agent", "retrieval", "llm", "uvx"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 dependencies = ["mcp>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/GusCayresMindsight/tool-to-agent-retrieval-mcp"
+Repository = "https://github.com/GusCayresMindsight/tool-to-agent-retrieval-mcp"
+Issues = "https://github.com/GusCayresMindsight/tool-to-agent-retrieval-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
