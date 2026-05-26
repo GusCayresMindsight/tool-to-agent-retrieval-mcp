@@ -166,7 +166,7 @@ def _corpus_with_executable_agent(
 
 @when(parsers.parse('the server starts via "{command}"'))
 def _server_starts_via(command: str, bdd_state: dict) -> None:
-    assert command == "uvx tool-selector-mcp"
+    assert command == "uvx tool-to-agent-retrieval-mcp"
     _load_corpus_into_state(bdd_state)
 
 

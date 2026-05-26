@@ -39,21 +39,21 @@ def _uvx_on_path() -> None:
 # --- Scenario: Starting the server via uvx --------------------------------
 
 
-@given("the tool-selector-mcp package is available on PyPI")
+@given("the tool-to-agent-retrieval-mcp package is available on PyPI")
 def _package_available() -> None:
     # In CI the package is available locally via the working tree; we treat
     # "available on PyPI" as "the distribution metadata is installed and
     # advertises the right entry point".
-    dist = md.distribution("tool-selector-mcp")
+    dist = md.distribution("tool-to-agent-retrieval-mcp")
     scripts = {ep.name: ep.value for ep in dist.entry_points if ep.group == "console_scripts"}
-    assert scripts.get("tool-selector-mcp") == "tool_selector_mcp.cli:main", (
+    assert scripts.get("tool-to-agent-retrieval-mcp") == "tool_selector_mcp.cli:main", (
         f"unexpected console_scripts entry: {scripts}"
     )
 
 
 @when(parsers.parse('a client runs "{command}"'))
 def _client_runs(command: str, bdd_state: dict) -> None:
-    assert command == "uvx tool-selector-mcp"
+    assert command == "uvx tool-to-agent-retrieval-mcp"
     # uvx resolves the console_scripts entry and invokes it — exercise the
     # same callable directly so the test does not depend on the network.
     main = importlib.import_module("tool_selector_mcp.cli").main
@@ -100,9 +100,9 @@ def _entry_added(section: str, docstring: str, config_path: Path) -> None:
 
 def _assert_config_launches_us(config_path: Path) -> None:
     config = json.loads(config_path.read_text())
-    entry = config["mcpServers"]["tool-selector"]
+    entry = config["mcpServers"]["tool-to-agent-retrieval-mcp"]
     assert entry["command"] == "uvx"
-    assert entry["args"] == ["tool-selector-mcp"]
+    assert entry["args"] == ["tool-to-agent-retrieval-mcp"]
 
 
 @then("Claude Desktop starts the server automatically on launch")
