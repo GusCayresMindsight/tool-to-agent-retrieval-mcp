@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/tool-selector-mcp
+      url: https://pypi.org/p/tool-to-agent-retrieval-mcp
     permissions:
       id-token: write
     steps:

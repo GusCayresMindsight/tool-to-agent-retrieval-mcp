@@ -1,4 +1,4 @@
-# tool-selector-mcp
+# tool-to-agent-retrieval-mcp
 
 An MCP server that selects the best-suited downstream agent for a natural language query
 and forwards a tool call to it. Distributed via `uvx`.
@@ -10,9 +10,9 @@ Add to Claude Desktop (`claude_desktop_config.json`) or Claude Code (`.claude/se
 ```json
 {
   "mcpServers": {
-    "tool-selector-mcp": {
+    "tool-to-agent-retrieval-mcp": {
       "command": "uvx",
-      "args": ["tool-selector-mcp"]
+      "args": ["tool-to-agent-retrieval-mcp"]
     }
   }
 }

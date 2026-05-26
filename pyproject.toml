@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tool-selector-mcp"
+name = "tool-to-agent-retrieval-mcp"
 version = "0.1.0"
 description = "MCP server that selects the best-suited downstream agent for a natural language query, distributed via uvx."
 readme = "README.md"
@@ -39,7 +39,7 @@ dev = [
 ]
 
 [project.scripts]
-tool-selector-mcp = "tool_selector_mcp.cli:main"
+tool-to-agent-retrieval-mcp = "tool_selector_mcp.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tool_selector_mcp"]

@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Guidance for AI coding agents working on `tool-selector-mcp`. Read this file before doing anything else.
+Guidance for AI coding agents working on `tool-to-agent-retrieval-mcp`. Read this file before doing anything else.
 
 ## Project
 
-`tool-selector-mcp` is an MCP server that, given a natural language query, selects the best-suited downstream agent from a corpus and forwards a tool call to it. It is distributed via `uvx`. The behavior of the system is specified by the Gherkin feature files in `docs/features/` — **those files are the source of truth, not the code**.
+`tool-to-agent-retrieval-mcp` is an MCP server that, given a natural language query, selects the best-suited downstream agent from a corpus and forwards a tool call to it. It is distributed via `uvx`. The behavior of the system is specified by the Gherkin feature files in `docs/features/` — **those files are the source of truth, not the code**.
 
 ## Repo layout
 
@@ -77,4 +77,4 @@ Only after Gates 1 and 2 are passed, write the minimum production code in `src/t
 - Sync dev deps: `uv sync --extra dev`
 - Collect tests: `uv run --extra dev pytest tests/pytest --collect-only`
 - Run tests: `uv run --extra dev pytest tests/pytest`
-- Launch the stub locally: `uv run tool-selector-mcp`
+- Launch the stub locally: `uv run tool-to-agent-retrieval-mcp`

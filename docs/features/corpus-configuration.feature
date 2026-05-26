@@ -7,7 +7,7 @@ Feature: Corpus Configuration
 
   Scenario: Server loads corpus from the default file path
     Given a file ".mcp-corpus.json" exists in the current working directory
-    When the server starts via "uvx tool-selector-mcp"
+    When the server starts via "uvx tool-to-agent-retrieval-mcp"
     Then the catalog is populated from ".mcp-corpus.json"
 
   Scenario: Server loads corpus from a custom path set via environment variable
