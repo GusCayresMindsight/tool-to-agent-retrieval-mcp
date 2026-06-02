@@ -19,7 +19,7 @@ class UnknownEmbeddingError(Exception):
 
 @runtime_checkable
 class Embedding(Protocol):
-    def __call__(self, query: str, text: str) -> float: ...
+    def __call__(self, query: str, text: str) -> float: ...  # pragma: no cover
 
 
 class TokenOverlapEmbedding:
