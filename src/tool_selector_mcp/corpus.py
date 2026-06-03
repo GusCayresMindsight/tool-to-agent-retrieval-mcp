@@ -46,9 +46,12 @@ class Tool:
 class Agent:
     agent_id: str
     description: str
-    command: str
+    command: str | None = None
     args: tuple[str, ...] = ()
     env: Mapping[str, str] = field(default_factory=dict)
+    url: str | None = None
+    transport: str = "stdio"
+    headers: Mapping[str, str] = field(default_factory=dict)
     tools: tuple[Tool, ...] = ()
 
 
@@ -124,12 +127,16 @@ def load_corpus(
             for t in spec.get("tools", [])
         )
         env_block = _resolve_env_block(spec.get("env", {}), host_env)
+        headers_block = _resolve_env_block(spec.get("headers", {}), host_env)
         agents[agent_id] = Agent(
             agent_id=agent_id,
             description=spec.get("description", ""),
-            command=spec["command"],
+            command=spec.get("command"),
             args=tuple(spec.get("args", [])),
             env=env_block,
+            url=spec.get("url"),
+            transport=spec.get("transport", "stdio" if spec.get("command") else "sse"),
+            headers=headers_block,
             tools=tools,
         )
     return Corpus(agents=agents)

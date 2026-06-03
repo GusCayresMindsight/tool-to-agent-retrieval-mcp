@@ -35,6 +35,9 @@ def _corpus() -> Corpus:
                 command="npx",
                 args=(),
                 env={},
+                url=None,
+                transport="stdio",
+                headers={},
                 tools=(
                     Tool(
                         name="create_issue",

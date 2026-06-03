@@ -24,13 +24,17 @@ def _agent(
     description: str,
     *,
     tools: tuple[Tool, ...] = (),
+    command: str = "npx",
 ) -> Agent:
     return Agent(
         agent_id=agent_id,
         description=description,
-        command="npx",
+        command=command,
         args=(),
         env={},
+        url=None,
+        transport="stdio",
+        headers={},
         tools=tools,
     )
 

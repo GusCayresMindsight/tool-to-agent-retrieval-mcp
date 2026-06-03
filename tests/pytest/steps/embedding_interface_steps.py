@@ -40,13 +40,29 @@ def _no_embedding(bdd_state: dict) -> None:
             command="echo",
             args=(),
             env={},
+            url=None,
+            transport="stdio",
+            headers={},
             tools=(
                 Tool(
                     name="create_pull_request",
                     description="Open a new pull request on a GitHub repository",
                 ),
             ),
-        )
+        ),
+        "slack-mcp": Agent(
+            agent_id="slack-mcp",
+            description="Send messages to Slack",
+            command="echo",
+            args=(),
+            env={},
+            url=None,
+            transport="stdio",
+            headers={},
+            tools=(
+                Tool(name="post_message", description="Post a message to a channel"),
+            ),
+        ),
     }
     _s(bdd_state)["corpus"] = Corpus(agents=agents)
     _s(bdd_state)["embedding"] = None

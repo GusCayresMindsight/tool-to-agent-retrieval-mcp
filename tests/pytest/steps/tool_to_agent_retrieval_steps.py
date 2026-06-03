@@ -21,6 +21,9 @@ def _empty_agent(agent_id: str, description: str) -> Agent:
         command="echo",
         args=(),
         env={},
+        url=None,
+        transport="stdio",
+        headers={},
         tools=(),
     )
 
@@ -61,6 +64,9 @@ def _catalog_tools(datatable, bdd_state: dict) -> None:
             command=agent.command,
             args=agent.args,
             env=agent.env,
+            url=agent.url,
+            transport=agent.transport,
+            headers=agent.headers,
             tools=tuple(tools_by_owner.get(agent_id, [])),
         )
     state["agents"] = new_agents
@@ -87,6 +93,9 @@ def _additional_tool(agent_id: str, tool_name: str, description: str, bdd_state:
         command=agent.command,
         args=agent.args,
         env=agent.env,
+        url=agent.url,
+        transport=agent.transport,
+        headers=agent.headers,
         tools=tuple(list(agent.tools) + [Tool(name=tool_name, description=description)]),
     )
     state["agents"][agent_id] = new_agent
