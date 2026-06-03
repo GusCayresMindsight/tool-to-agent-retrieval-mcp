@@ -17,8 +17,10 @@ from tool_selector_mcp.server import (
     ToolSelectorServer,
     UnknownToolError,
     _parse_tool_id,
+    make_launcher,
     make_recording_async_launcher,
     make_recording_launcher,
+    make_subprocess_launcher,
 )
 
 # ---------------------------------------------------------------------------
@@ -318,3 +320,263 @@ def test_main_success_path_and_tool_functions():
     mock_server.invoke_tool_async = AsyncMock(side_effect=RuntimeError("boom"))
     err_result = asyncio.run(captured["invoke_tool"]("tool", {}, None))
     assert err_result == {"error": "boom"}
+
+
+# ---------------------------------------------------------------------------
+# make_launcher – helpers
+# ---------------------------------------------------------------------------
+
+
+def _agent_stdio(command: str = "npx") -> Agent:
+    return Agent(
+        agent_id="test-agent",
+        description="test",
+        command=command,
+        args=(),
+        env={},
+        url=None,
+        transport="stdio",
+        headers={},
+        tools=(),
+    )
+
+
+def _agent_sse(url: str = "https://example.com/mcp") -> Agent:
+    return Agent(
+        agent_id="sse-agent",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url=url,
+        transport="sse",
+        headers={"Authorization": "Bearer tok"},
+        tools=(),
+    )
+
+
+def _agent_streamable_http(url: str = "https://example.com/mcp") -> Agent:
+    return Agent(
+        agent_id="http-agent",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url=url,
+        transport="streamable-http",
+        headers={},
+        tools=(),
+    )
+
+
+def _build_mock_stdio() -> dict:
+    mock_read, mock_write = MagicMock(), MagicMock()
+    mock_session = AsyncMock()
+    mock_session.call_tool = AsyncMock(return_value={"ok": True})
+    mock_stdio_cm = AsyncMock()
+    mock_stdio_cm.__aenter__ = AsyncMock(return_value=(mock_read, mock_write))
+    mock_stdio_cm.__aexit__ = AsyncMock(return_value=None)
+    mock_session_cm = AsyncMock()
+    mock_session_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session_cm.__aexit__ = AsyncMock(return_value=None)
+    return {
+        "mock_client": MagicMock(return_value=mock_stdio_cm),
+        "MockSession": MagicMock(return_value=mock_session_cm),
+        "mock_session": mock_session,
+    }
+
+
+def _build_mock_remote(n_yield: int = 2) -> dict:
+    mock_read, mock_write = MagicMock(), MagicMock()
+    mock_session = AsyncMock()
+    mock_session.call_tool = AsyncMock(return_value={"ok": True})
+    mock_remote_cm = AsyncMock()
+    if n_yield == 3:
+        mock_remote_cm.__aenter__ = AsyncMock(return_value=(mock_read, mock_write, MagicMock()))
+    else:
+        mock_remote_cm.__aenter__ = AsyncMock(return_value=(mock_read, mock_write))
+    mock_remote_cm.__aexit__ = AsyncMock(return_value=None)
+    mock_session_cm = AsyncMock()
+    mock_session_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session_cm.__aexit__ = AsyncMock(return_value=None)
+    return {
+        "mock_client": MagicMock(return_value=mock_remote_cm),
+        "MockSession": MagicMock(return_value=mock_session_cm),
+        "mock_session": mock_session,
+    }
+
+
+# ---------------------------------------------------------------------------
+# make_launcher – stdio transport
+# ---------------------------------------------------------------------------
+
+
+def test_make_launcher_stdio_calls_tool():
+    m = _build_mock_stdio()
+    with (
+        patch("mcp.client.stdio.stdio_client", m["mock_client"]),
+        patch("mcp.ClientSession", m["MockSession"]),
+        patch("mcp.StdioServerParameters", MagicMock(return_value=MagicMock())),
+    ):
+        result = asyncio.run(make_launcher()(_agent_stdio(), "create_issue", {"repo": "x"}))
+    assert result == {"ok": True}
+    m["mock_session"].call_tool.assert_called_once_with("create_issue", {"repo": "x"})
+
+
+def test_make_launcher_stdio_no_command_raises():
+    agent = _agent_stdio()
+    agent = Agent(
+        agent_id=agent.agent_id,
+        description=agent.description,
+        command=None,
+        args=agent.args,
+        env=agent.env,
+        url=agent.url,
+        transport="stdio",
+        headers=agent.headers,
+        tools=agent.tools,
+    )
+    with pytest.raises(RuntimeError, match="has no command"):
+        asyncio.run(make_launcher()(agent, "create_issue", {}))
+
+
+# ---------------------------------------------------------------------------
+# make_launcher – SSE transport
+# ---------------------------------------------------------------------------
+
+
+def test_make_launcher_sse_calls_tool():
+    m = _build_mock_remote(n_yield=2)
+    with (
+        patch("mcp.client.sse.sse_client", m["mock_client"]),
+        patch("mcp.ClientSession", m["MockSession"]),
+    ):
+        result = asyncio.run(make_launcher()(_agent_sse(), "search", {"q": "hello"}))
+    assert result == {"ok": True}
+    m["mock_session"].call_tool.assert_called_once_with("search", {"q": "hello"})
+
+
+def test_make_launcher_sse_no_url_raises():
+    agent = Agent(
+        agent_id="sse-agent",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url=None,
+        transport="sse",
+        headers={},
+        tools=(),
+    )
+    with pytest.raises(RuntimeError, match="has no url"):
+        asyncio.run(make_launcher()(agent, "search", {}))
+
+
+# ---------------------------------------------------------------------------
+# make_launcher – streamable-http transport
+# ---------------------------------------------------------------------------
+
+
+def test_make_launcher_streamable_http_calls_tool():
+    m = _build_mock_remote(n_yield=3)
+    with (
+        patch("mcp.client.streamable_http.streamablehttp_client", m["mock_client"]),
+        patch("mcp.ClientSession", m["MockSession"]),
+    ):
+        result = asyncio.run(make_launcher()(_agent_streamable_http(), "read_doc", {}))
+    assert result == {"ok": True}
+    m["mock_session"].call_tool.assert_called_once_with("read_doc", {})
+
+
+def test_make_launcher_streamable_http_no_url_raises():
+    agent = Agent(
+        agent_id="http-agent",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url=None,
+        transport="streamable-http",
+        headers={},
+        tools=(),
+    )
+    with pytest.raises(RuntimeError, match="has no url"):
+        asyncio.run(make_launcher()(agent, "read_doc", {}))
+
+
+# ---------------------------------------------------------------------------
+# make_launcher – unknown transport
+# ---------------------------------------------------------------------------
+
+
+def test_make_launcher_unknown_transport_raises():
+    agent = Agent(
+        agent_id="bad-agent",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url="https://example.com",
+        transport="grpc",
+        headers={},
+        tools=(),
+    )
+    with pytest.raises(ValueError, match="unknown transport"):
+        asyncio.run(make_launcher()(agent, "tool", {}))
+
+
+# ---------------------------------------------------------------------------
+# corpus – transport auto-detection
+# ---------------------------------------------------------------------------
+
+
+def test_load_corpus_auto_detects_stdio_transport(tmp_path: Path) -> None:
+    corpus_file = tmp_path / "corpus.json"
+    corpus_file.write_text(
+        json.dumps(
+            {"mcpServers": {"my-agent": {"command": "npx", "description": "test", "tools": []}}}
+        )
+    )
+    corpus = load_corpus(corpus_file, host_env={})
+    assert corpus.agents["my-agent"].transport == "stdio"
+
+
+def test_load_corpus_auto_detects_sse_transport(tmp_path: Path) -> None:
+    corpus_file = tmp_path / "corpus.json"
+    corpus_file.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "remote-agent": {
+                        "url": "https://example.com/mcp",
+                        "description": "test",
+                        "tools": [],
+                    }
+                }
+            }
+        )
+    )
+    corpus = load_corpus(corpus_file, host_env={})
+    assert corpus.agents["remote-agent"].transport == "sse"
+    assert corpus.agents["remote-agent"].url == "https://example.com/mcp"
+
+
+# ---------------------------------------------------------------------------
+# make_subprocess_launcher – null command guard (line 214)
+# ---------------------------------------------------------------------------
+
+
+def test_make_subprocess_launcher_no_command_raises():
+    agent = Agent(
+        agent_id="no-cmd",
+        description="test",
+        command=None,
+        args=(),
+        env={},
+        url=None,
+        transport="stdio",
+        headers={},
+        tools=(),
+    )
+    with pytest.raises(RuntimeError, match="has no command"):
+        asyncio.run(make_subprocess_launcher()(agent, "tool", {}))

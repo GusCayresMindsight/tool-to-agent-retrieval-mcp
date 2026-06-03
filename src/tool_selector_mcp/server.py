@@ -210,6 +210,8 @@ def make_subprocess_launcher() -> AsyncLauncher:
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
 
+        if not agent.command:
+            raise RuntimeError(f"agent {agent.agent_id} has no command (stdio transport requires one)")
         params = StdioServerParameters(
             command=agent.command,
             args=list(agent.args),
@@ -258,7 +260,7 @@ def make_launcher() -> AsyncLauncher:
                 raise RuntimeError(f"agent {agent.agent_id} has no url (sse transport requires one)")
             async with sse_client(
                 url=agent.url,
-                headers=dict(agent.headers) or None,
+                headers=dict(agent.headers) if agent.headers else None,
             ) as (read, write):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
@@ -271,8 +273,8 @@ def make_launcher() -> AsyncLauncher:
                 raise RuntimeError(f"agent {agent.agent_id} has no url (streamable-http transport requires one)")
             async with streamablehttp_client(
                 url=agent.url,
-                headers=dict(agent.headers) or None,
-            ) as (read, write):
+                headers=dict(agent.headers) if agent.headers else None,
+            ) as (read, write, _):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     return await session.call_tool(tool_name, dict(arguments))
