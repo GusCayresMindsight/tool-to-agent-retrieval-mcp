@@ -12,9 +12,12 @@ def _agent(
     agent_id: str,
     *,
     description: str = "",
-    command: str = "npx",
+    command: str | None = "npx",
     args: tuple[str, ...] = (),
     env: dict[str, str] | None = None,
+    url: str | None = None,
+    transport: str = "stdio",
+    headers: dict[str, str] | None = None,
     tools: tuple[Tool, ...] = (),
 ) -> Agent:
     return Agent(
@@ -23,6 +26,9 @@ def _agent(
         command=command,
         args=args,
         env=env or {},
+        url=url,
+        transport=transport,
+        headers=headers or {},
         tools=tools,
     )
 

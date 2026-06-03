@@ -54,9 +54,12 @@ class LaunchCall:
     """Record of a downstream invocation, surfaced for tests/observability."""
 
     agent_id: str
-    command: str
+    command: str | None
     args: tuple[str, ...]
     env: Mapping[str, str]
+    url: str | None
+    transport: str
+    headers: Mapping[str, str]
     tool_name: str
     arguments: Mapping[str, Any]
 
@@ -207,6 +210,8 @@ def make_subprocess_launcher() -> AsyncLauncher:
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
 
+        if not agent.command:
+            raise RuntimeError(f"agent {agent.agent_id} has no command (stdio transport requires one)")
         params = StdioServerParameters(
             command=agent.command,
             args=list(agent.args),
@@ -216,6 +221,66 @@ def make_subprocess_launcher() -> AsyncLauncher:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 return await session.call_tool(tool_name, dict(arguments))
+
+    return launcher
+
+
+def make_launcher() -> AsyncLauncher:
+    """Return an async launcher that connects via stdio, SSE, or streamable-http.
+
+    The transport is determined by the agent's ``transport`` field:
+    * ``stdio`` (default): spawn a subprocess.
+    * ``sse``: connect to a remote SSE endpoint.
+    * ``streamable-http``: connect to a remote Streamable HTTP endpoint.
+    """
+
+    async def launcher(agent: Agent, tool_name: str, arguments: Mapping[str, Any]) -> Any:
+        from mcp import ClientSession
+
+        if agent.transport == "stdio":
+            from mcp import StdioServerParameters
+            from mcp.client.stdio import stdio_client
+
+            if not agent.command:
+                raise RuntimeError(f"agent {agent.agent_id} has no command (stdio transport requires one)")
+            params = StdioServerParameters(
+                command=agent.command,
+                args=list(agent.args),
+                env=dict(agent.env) if agent.env else None,
+            )
+            async with stdio_client(params) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    return await session.call_tool(tool_name, dict(arguments))
+
+        elif agent.transport == "sse":
+            from mcp.client.sse import sse_client
+
+            if not agent.url:
+                raise RuntimeError(f"agent {agent.agent_id} has no url (sse transport requires one)")
+            async with sse_client(
+                url=agent.url,
+                headers=dict(agent.headers) if agent.headers else None,
+            ) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    return await session.call_tool(tool_name, dict(arguments))
+
+        elif agent.transport == "streamable-http":
+            from mcp.client.streamable_http import streamablehttp_client
+
+            if not agent.url:
+                raise RuntimeError(f"agent {agent.agent_id} has no url (streamable-http transport requires one)")
+            async with streamablehttp_client(
+                url=agent.url,
+                headers=dict(agent.headers) if agent.headers else None,
+            ) as (read, write, _):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    return await session.call_tool(tool_name, dict(arguments))
+
+        else:
+            raise ValueError(f"unknown transport: {agent.transport}")
 
     return launcher
 
@@ -230,6 +295,9 @@ def make_recording_async_launcher() -> tuple[list[LaunchCall], AsyncLauncher]:
             command=agent.command,
             args=tuple(agent.args),
             env=dict(agent.env),
+            url=agent.url,
+            transport=agent.transport,
+            headers=dict(agent.headers),
             tool_name=tool_name,
             arguments=dict(arguments),
         )
@@ -258,6 +326,9 @@ def make_recording_launcher() -> tuple[list[LaunchCall], Launcher]:
             command=agent.command,
             args=tuple(agent.args),
             env=dict(agent.env),
+            url=agent.url,
+            transport=agent.transport,
+            headers=dict(agent.headers),
             tool_name=tool_name,
             arguments=dict(arguments),
         )

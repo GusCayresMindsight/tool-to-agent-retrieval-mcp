@@ -55,6 +55,9 @@ def _agent_for_launcher(command: str, args_json: str, bdd_state: dict) -> None:
         command=command,
         args=tuple(args),
         env={},
+        url=None,
+        transport="stdio",
+        headers={},
         tools=(Tool(name="create_issue", description="Create an issue", input_schema={}),),
     )
 

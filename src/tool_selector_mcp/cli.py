@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .corpus import CorpusError, load_corpus, resolve_corpus_path
 from .embeddings import UnknownEmbeddingError, build_embedding
-from .server import ToolSelectorServer, UnknownToolError, make_subprocess_launcher
+from .server import ToolSelectorServer, UnknownToolError, make_launcher
 
 DEFAULT_EMBEDDING = "token-overlap"
 EMBEDDING_ENV_VAR = "TOOL_SELECTOR_EMBEDDING"
@@ -26,7 +26,7 @@ def build_server() -> ToolSelectorServer:
     corpus = load_corpus(path)
     name = os.environ.get(EMBEDDING_ENV_VAR, DEFAULT_EMBEDDING)
     embedding = build_embedding(name)
-    return ToolSelectorServer(corpus, launcher=make_subprocess_launcher(), embedding=embedding)
+    return ToolSelectorServer(corpus, launcher=make_launcher(), embedding=embedding)
 
 
 def main(argv: list[str] | None = None) -> int:
